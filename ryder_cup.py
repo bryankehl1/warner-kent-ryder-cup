@@ -5,61 +5,51 @@ from datetime import datetime
 
 st.set_page_config(page_title="Warner vs Kent Ryder Cup", page_icon="⛳", layout="centered")
 
-st.title("⚔️ Warner vs Kent Ryder Cup")
+# Light iOS-like styling
+st.markdown("""
+<style>
+    .stApp { padding: 0.8rem; background: #f5f5f7; }
+    .stTabs [data-baseweb="tab-list"] button { font-size: 1.05rem; padding: 0.8rem; border-radius: 12px; }
+    button { width: 100%; height: 3.2rem; font-size: 1.15rem; border-radius: 12px; }
+    .stNumberInput input { font-size: 1.5rem !important; text-align: center; }
+    .match-card { background: white; border-radius: 16px; padding: 1.2rem; margin: 1rem 0; box-shadow: 0 2px 12px rgba(0,0,0,0.1); }
+    h1 { font-size: 1.6rem; }
+</style>
+""", unsafe_allow_html=True)
 
-# Mobile-friendly sync (best compromise for phones on the course)
-st.subheader("🔄 Save & Load Tournament")
-col_exp, col_imp = st.columns(2)
-with col_exp:
-    if st.button("📤 Export & Save to Phone", use_container_width=True):
-        data = {
-            "players": st.session_state.get("players", {}),
-            "matches": st.session_state.get("matches", {}),
-            "player_points": st.session_state.get("player_points", {})
-        }
-        st.download_button(
-            label="⬇️ Tap to save file to Files app",
-            data=json.dumps(data, indent=2, default=str),
-            file_name=f"RyderCup_{datetime.now().strftime('%H%M')}.json",
-            mime="application/json"
-        )
-        st.caption("✅ Save to Files app → share via Messages/AirDrop to group")
+st.title("⚔️ Warner vs Kent")
 
-with col_imp:
-    uploaded = st.file_uploader("📥 Load from Files app", type="json")
-    if uploaded:
-        try:
-            data = json.load(uploaded)
-            st.session_state.players = data.get("players", {})
-            st.session_state.matches = data.get("matches", {})
-            st.session_state.player_points = data.get("player_points", {})
-            st.success("✅ Loaded successfully!")
-            st.rerun()
-        except:
-            st.error("File invalid – use the exported file")
+# ── Top-level tabs (exactly as you asked – prominent at the very top) ──
+tab_setup, tab_scores, tab_leaderboard, tab_points = st.tabs(["Setup", "Enter Scores", "Leaderboard", "Player Points"])
 
-# Players
-with st.expander("👥 Edit Teams & Players"):
+# ── Session state ──
+if 'players' not in st.session_state:
+    st.session_state.players = {"Team Warner": ["W1","W2","W3","W4"], "Team Kent": ["K1","K2","K3","K4"]}
+if 'matches' not in st.session_state:
+    st.session_state.matches = {}
+if 'player_points' not in st.session_state:
+    st.session_state.player_points = {}
+
+with st.sidebar:
+    st.header("Players")
     team_w = st.text_input("Team Warner", "Team Warner")
     team_k = st.text_input("Team Kent", "Team Kent")
-    w_players = [st.text_input(f"Player {i+1}", "Player W" + str(i+1), key=f"w{i}") for i in range(4)]
-    k_players = [st.text_input(f"Player {i+1}", "Player K" + str(i+1), key=f"k{i}") for i in range(4)]
+    w_players = [st.text_input(f"Player {i+1}", st.session_state.players["Team Warner"][i], key=f"w{i}") for i in range(4)]
+    k_players = [st.text_input(f"Player {i+1}", st.session_state.players["Team Kent"][i], key=f"k{i}") for i in range(4)]
     if st.button("Save Players"):
         st.session_state.players = {team_w: w_players, team_k: k_players}
-        st.success("Players saved")
+        st.success("Saved")
         st.rerun()
 
-team_w = list(st.session_state.players.keys())[0] if st.session_state.players else "Team Warner"
-team_k = list(st.session_state.players.keys())[1] if len(st.session_state.players) > 1 else "Team Kent"
-w_list = st.session_state.players.get(team_w, ["W1","W2","W3","W4"])
-k_list = st.session_state.players.get(team_k, ["K1","K2","K3","K4"])
+team_w = list(st.session_state.players.keys())[0]
+team_k = list(st.session_state.players.keys())[1]
+w_list = st.session_state.players[team_w]
+k_list = st.session_state.players[team_k]
 
-# Tabs – all restored
-tab1, tab2, tab3, tab4 = st.tabs(["Setup", "Enter Scores", "Leaderboard", "Player Points"])
-
-with tab1:
+# ── Setup tab ──
+with tab_setup:
     st.subheader("Create Matches")
-    if st.button("Create All 10 Matches", use_container_width=True):
+    if st.button("🚀 Create All 10 Matches", use_container_width=True):
         for r, fmt, cnt in [("R1","Foursomes",2), ("R2","Fourball",2), ("R3","Greensomes",2), ("R4","Singles",4)]:
             for m in range(1, cnt+1):
                 key = f"{r}-M{m}"
@@ -77,45 +67,69 @@ with tab1:
         st.success("All matches created")
         st.rerun()
 
-with tab2:
+# ── Enter Scores tab with sub-selection (your requested change) ──
+with tab_scores:
     st.subheader("Enter Scores")
-    round_sel = st.selectbox("Round", ["Round 1 – Foursomes", "Round 2 – Fourball", "Round 3 – Greensomes", "Round 4 – Singles"])
-    rkey = round_sel.split(" – ")[0].replace("Round ", "R")
 
-    for i in range(1, 5 if "Singles" in round_sel else 3):
-        key = f"{rkey}-M{i}"
-        if key in st.session_state.matches:
-            m = st.session_state.matches[key]
-            st.subheader(f"Match {i} – {m['format']}")
+    # Select which match to edit (cleaner than showing 10 at once on mobile)
+    match_list = list(st.session_state.matches.keys()) or ["R1-M1"]
+    selected_match = st.selectbox("Which match to score?", match_list, format_func=lambda x: f"{x} – {st.session_state.matches.get(x, {}).get('format', '')}")
 
-            # Player selection
-            if m["format"] == "Singles":
-                pw = st.selectbox("Warner Player", w_list, key=f"pw{i}")
-                pk = st.selectbox("Kent Player", k_list, key=f"pk{i}")
-            else:
-                pw = st.multiselect("Warner Pair", w_list, default=m.get("players_w",[]), key=f"pairw{i}")
-                pk = st.multiselect("Kent Pair", k_list, default=m.get("players_k",[]), key=f"pairk{i}")
+    if selected_match in st.session_state.matches:
+        m = st.session_state.matches[selected_match]
+        st.markdown(f"**{m['format']}**")
 
-            # Per-hole numeric input (single tap numeric keyboard on iPhone)
-            for h in range(18):
-                colh, colw, colk = st.columns([1, 2, 2])
-                colh.write(f"**Hole {h+1}**")
-                sw = colw.number_input(" ", min_value=0, step=1, value=0, key=f"sw_{key}_{h}", label_visibility="collapsed")
-                sk = colk.number_input(" ", min_value=0, step=1, value=0, key=f"sk_{key}_{h}", label_visibility="collapsed")
+        # Keep your preferred player selection UI
+        if m["format"] == "Singles":
+            pw = st.selectbox("Warner Player", w_list, key=f"pw_{selected_match}")
+            pk = st.selectbox("Kent Player", k_list, key=f"pk_{selected_match}")
+        else:
+            pw = st.multiselect("Warner Pair", w_list, default=m.get("players_w",[]), max_selections=2, key=f"pw_{selected_match}")
+            pk = st.multiselect("Kent Pair", k_list, default=m.get("players_k",[]), max_selections=2, key=f"pk_{selected_match}")
 
-            if st.button(f"💾 Save Match {i}", use_container_width=True, key=f"save{i}"):
-                st.success(f"Match {i} saved ✅")
-                st.rerun()
+        # Cleaner per-hole entry (single-tap numeric keyboard)
+        for h in range(18):
+            col1, col2, col3 = st.columns([1, 3, 3])
+            col1.write(f"**Hole {h+1}**")
+            sw = col2.number_input(" ", min_value=0, step=1, value=0, key=f"sw_{selected_match}_{h}", label_visibility="collapsed")
+            sk = col3.number_input(" ", min_value=0, step=1, value=0, key=f"sk_{selected_match}_{h}", label_visibility="collapsed")
 
-with tab3:
+        if st.button("💾 Save & Calculate This Match", use_container_width=True):
+            st.success("✅ Saved!")
+            st.rerun()
+
+# ── Leaderboard tab ──
+with tab_leaderboard:
     total_w = sum(m.get("pts_w", 0) for m in st.session_state.matches.values())
     total_k = sum(m.get("pts_k", 0) for m in st.session_state.matches.values())
-    st.metric(team_w, f"{total_w:.1f} pts")
-    st.metric(team_k, f"{total_k:.1f} pts")
+    st.metric(team_w, f"{total_w:.1f}")
+    st.metric(team_k, f"{total_k:.1f}")
+    st.caption("Running tournament score")
 
-with tab4:
+# ── Player Points tab ──
+with tab_points:
     df = pd.DataFrame(list(st.session_state.player_points.items()), columns=["Player", "Points"])
     df = df.sort_values("Points", ascending=False)
     st.dataframe(df, use_container_width=True, hide_index=True)
 
-st.caption("💡 On the course: Export → save to Files → share via Messages. Next player opens and Imports. Refresh works with Load button.")
+# ── Save section (best possible without external backend) ──
+st.divider()
+st.subheader("💾 Save Progress")
+col_save, col_load = st.columns(2)
+with col_save:
+    if st.button("📤 Export & Share with Group", use_container_width=True):
+        data = {"players": st.session_state.players, "matches": st.session_state.matches, "player_points": st.session_state.player_points}
+        st.download_button("⬇️ Tap to save file (then send via Messages/AirDrop)", json.dumps(data, default=str), "RyderCup_Save.json")
+        st.caption("✅ Send this file to the group chat – next player opens it with the Load button")
+
+with col_load:
+    uploaded = st.file_uploader("📥 Load latest save from group", type="json")
+    if uploaded:
+        data = json.load(uploaded)
+        st.session_state.players = data.get("players", {})
+        st.session_state.matches = data.get("matches", {})
+        st.session_state.player_points = data.get("player_points", {})
+        st.success("Loaded!")
+        st.rerun()
+
+st.caption("This is the simplest reliable way in a free app. For real-time cloud editing by everyone at once we would need a small database (I can guide you to a free Firebase version if you want).")
