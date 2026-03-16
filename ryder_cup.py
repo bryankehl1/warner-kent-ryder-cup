@@ -11,7 +11,7 @@ st.set_page_config(
 )
 
 # ─────────────────────────────────────────────
-# SAFE SESSION STATE INITIALIZATION (prevents KeyError on first load)
+# SAFE SESSION STATE INITIALIZATION
 # ─────────────────────────────────────────────
 if 'players' not in st.session_state:
     st.session_state.players = {
@@ -45,15 +45,14 @@ with st.sidebar:
 
     if st.button("💾 Save Player Names & Reset Roster"):
         st.session_state.players = {team_w: w_players, team_k: k_players}
-        # Re-init player_points if names changed
         all_players = w_players + k_players
         st.session_state.player_points = {p: st.session_state.player_points.get(p, 0.0) for p in all_players}
         st.success("✅ Players saved! Create or edit matches below.")
 
     st.divider()
-    st.caption("📱 Open this page on your iPhone → Add to Home Screen for app-like feel")
+    st.caption("📱 Add to Home Screen on iPhone for app-like feel")
 
-# Use current team names & rosters
+# Current team names & rosters
 team_w = list(st.session_state.players.keys())[0]
 team_k = list(st.session_state.players.keys())[1]
 w_list = st.session_state.players[team_w]
@@ -65,8 +64,8 @@ k_list = st.session_state.players[team_k]
 tab_setup, tab_rounds, tab_leaderboard, tab_stats = st.tabs(["🔧 Setup Matches", "⛳ Enter Scores (4 Rounds)", "🏆 Leaderboard", "👤 Player Points"])
 
 with tab_setup:
-    st.subheader("Pre-create all 10 matches")
-    if st.button("🚀 Auto-create ALL matches for the tournament"):
+    st.subheader("Auto-create All Matches")
+    if st.button("🚀 Auto-create ALL 10 matches for the tournament"):
         for r, fmt, count in [("R1", "Foursomes", 2), ("R2", "Fourball", 2), ("R3", "Greensomes", 2), ("R4", "Singles", 4)]:
             for m in range(1, count + 1):
                 key = f"{r}-M{m}"
@@ -85,105 +84,135 @@ with tab_setup:
                         "points_k": 0.0,
                         "completed": False
                     }
-        st.success("✅ All 10 matches created! Go to the next tab to assign players & enter scores.")
+        st.success("✅ All 10 matches created! Switch to 'Enter Scores' tab.")
+    
+    st.subheader("Or Create One Custom Match")
+    custom_round = st.selectbox("Round/Format", ["R1 - Foursomes", "R2 - Fourball", "R3 - Greensomes", "R4 - Singles"])
+    custom_num = st.number_input("Match Number (1–4)", min_value=1, max_value=4, value=1)
+    if st.button("➕ Create This Match"):
+        r = custom_round[:2]
+        fmt = custom_round.split(" - ")[1]
+        key = f"{r}-M{custom_num}"
+        if key not in st.session_state.matches:
+            st.session_state.matches[key] = {
+                "round": r,
+                "format": fmt,
+                "players_w": w_list[:2] if fmt != "Singles" else [w_list[0]],
+                "players_k": k_list[:2] if fmt != "Singles" else [k_list[0]],
+                "holes": 18,
+                "scores_w": [0]*18,
+                "scores_k": [0]*18,
+                "individual_w": [0]*18 if fmt == "Singles" else None,
+                "individual_k": [0]*18 if fmt == "Singles" else None,
+                "points_w": 0.0,
+                "points_k": 0.0,
+                "completed": False
+            }
+            st.success(f"Match {key} created!")
+            st.rerun()
+        else:
+            st.warning(f"Match {key} already exists.")
 
 with tab_rounds:
-    round_tab = st.selectbox("Choose Round", ["Round 1 – Foursomes", "Round 2 – Fourball", "Round 3 – Greensomes", "Round 4 – Singles (1v1)"])
-    r_key = round_tab[:2]  # R1, R2...
+    if not st.session_state.matches:
+        st.info("No matches created yet. Go to the 'Setup Matches' tab and use the auto-create button or manual create option to get started.")
+    else:
+        round_tab = st.selectbox("Choose Round", ["Round 1 – Foursomes", "Round 2 – Fourball", "Round 3 – Greensomes", "Round 4 – Singles (1v1)"])
+        r_key = round_tab[:2]
 
-    cols = st.columns(2 if "Round 4" not in round_tab else 1)
-    for i, col in enumerate(cols if "Round 4" not in round_tab else [st.container()] * 4):
-        with col:
-            m_key = f"{r_key}-M{i+1}"
-            if m_key not in st.session_state.matches:
-                st.warning(f"Match {i+1} not created yet – click Setup button first")
-                continue
+        cols = st.columns(2 if "Round 4" not in round_tab else 1)
+        for i, col in enumerate(cols if "Round 4" not in round_tab else [st.container()] * 4):
+            with col:
+                m_key = f"{r_key}-M{i+1}"
+                if m_key not in st.session_state.matches:
+                    st.info(f"Match {i+1} ({round_tab.split(' – ')[1]}) not created yet. Create it in Setup tab if needed.")
+                    continue
 
-            match = st.session_state.matches[m_key]
-            fmt = match["format"]
+                match = st.session_state.matches[m_key]
+                fmt = match["format"]
 
-            st.subheader(f"Match {i+1} • {fmt}")
-            st.caption(f"{team_w} vs {team_k} • 18 holes")
+                st.subheader(f"Match {i+1} • {fmt}")
+                st.caption(f"{team_w} vs {team_k} • 18 holes")
 
-            # Player assignment
-            if fmt == "Singles":
-                p_w = st.selectbox(f"{team_w} Player", w_list, key=f"selw_{m_key}")
-                p_k = st.selectbox(f"{team_k} Player", k_list, key=f"selk_{m_key}")
-                match["players_w"] = [p_w]
-                match["players_k"] = [p_k]
-            else:
-                p_w = st.multiselect(f"{team_w} Pair (2)", w_list, default=match["players_w"], max_selections=2, key=f"pw_{m_key}")
-                p_k = st.multiselect(f"{team_k} Pair (2)", k_list, default=match["players_k"], max_selections=2, key=f"pk_{m_key}")
-                match["players_w"] = p_w
-                match["players_k"] = p_k
+                # Player assignment
+                if fmt == "Singles":
+                    p_w = st.selectbox(f"{team_w} Player", w_list, key=f"selw_{m_key}")
+                    p_k = st.selectbox(f"{team_k} Player", k_list, key=f"selk_{m_key}")
+                    match["players_w"] = [p_w]
+                    match["players_k"] = [p_k]
+                else:
+                    p_w = st.multiselect(f"{team_w} Pair (2)", w_list, default=match.get("players_w", []), max_selections=2, key=f"pw_{m_key}")
+                    p_k = st.multiselect(f"{team_k} Pair (2)", k_list, default=match.get("players_k", []), max_selections=2, key=f"pk_{m_key}")
+                    match["players_w"] = p_w
+                    match["players_k"] = p_k
 
-            # Scoring input
-            if fmt == "Singles":
-                st.write("**Enter each player’s score per hole**")
-                df = pd.DataFrame({
-                    "Hole": list(range(1,19)),
-                    f"{p_w} Score": match.get("individual_w", [0]*18),
-                    f"{p_k} Score": match.get("individual_k", [0]*18),
-                    "Winner": [""]*18
-                })
-                edited = st.data_editor(df, width="stretch", hide_index=True, key=f"edit_singles_{m_key}")
-                if st.button("✅ Calculate Match", key=f"calc_{m_key}"):
-                    pts_w = pts_k = 0.0
-                    for h in range(18):
-                        sw = edited.iloc[h, 1]
-                        sk = edited.iloc[h, 2]
-                        if sw > 0 and sk > 0:
-                            if sw < sk:
-                                pts_w += 1
-                                edited.iloc[h, 3] = team_w
-                            elif sk < sw:
-                                pts_k += 1
-                                edited.iloc[h, 3] = team_k
-                            else:
-                                pts_w += 0.5
-                                pts_k += 0.5
-                                edited.iloc[h, 3] = "½"
-                    match["points_w"] = pts_w
-                    match["points_k"] = pts_k
-                    match["completed"] = True
-                    st.session_state.player_points[p_w] += pts_w
-                    st.session_state.player_points[p_k] += pts_k
-                    st.success(f"✅ {team_w} {pts_w} – {team_k} {pts_k}")
-            else:
-                st.write("**Team/Pair score per hole**")
-                df_pair = pd.DataFrame({
-                    "Hole": list(range(1,19)),
-                    f"{team_w} Pair Score": match["scores_w"],
-                    f"{team_k} Pair Score": match["scores_k"],
-                    "Result": [""]*18
-                })
-                edited_pair = st.data_editor(df_pair, width="stretch", hide_index=True, key=f"edit_pair_{m_key}")
-                if st.button("✅ Update Pair Match", key=f"up_{m_key}"):
-                    pts_w = pts_k = 0.0
-                    for h in range(18):
-                        aw = edited_pair.iloc[h, 1]
-                        ak = edited_pair.iloc[h, 2]
-                        if aw > 0 and ak > 0:
-                            if aw < ak:
-                                pts_w += 1
-                                edited_pair.iloc[h, 3] = f"{team_w} wins"
-                            elif ak < aw:
-                                pts_k += 1
-                                edited_pair.iloc[h, 3] = f"{team_k} wins"
-                            else:
-                                pts_w += 0.5
-                                pts_k += 0.5
-                                edited_pair.iloc[h, 3] = "Halved"
-                    match["points_w"] = pts_w
-                    match["points_k"] = pts_k
-                    match["scores_w"] = edited_pair.iloc[:,1].tolist()
-                    match["scores_k"] = edited_pair.iloc[:,2].tolist()
-                    match["completed"] = True
-                    for pw in match["players_w"]:
-                        st.session_state.player_points[pw] += pts_w
-                    for pk in match["players_k"]:
-                        st.session_state.player_points[pk] += pts_k
-                    st.success(f"✅ Pair points recorded")
+                # Scoring
+                if fmt == "Singles":
+                    st.write("**Enter each player’s score per hole**")
+                    df = pd.DataFrame({
+                        "Hole": list(range(1,19)),
+                        f"{p_w} Score": match.get("individual_w", [0]*18),
+                        f"{p_k} Score": match.get("individual_k", [0]*18),
+                        "Winner": [""]*18
+                    })
+                    edited = st.data_editor(df, width="stretch", hide_index=True, key=f"edit_singles_{m_key}")
+                    if st.button("✅ Calculate Match", key=f"calc_{m_key}"):
+                        pts_w = pts_k = 0.0
+                        for h in range(18):
+                            sw = edited.iloc[h, 1]
+                            sk = edited.iloc[h, 2]
+                            if sw > 0 and sk > 0:
+                                if sw < sk:
+                                    pts_w += 1
+                                    edited.iloc[h, 3] = team_w
+                                elif sk < sw:
+                                    pts_k += 1
+                                    edited.iloc[h, 3] = team_k
+                                else:
+                                    pts_w += 0.5
+                                    pts_k += 0.5
+                                    edited.iloc[h, 3] = "½"
+                        match["points_w"] = pts_w
+                        match["points_k"] = pts_k
+                        match["completed"] = True
+                        st.session_state.player_points[p_w] += pts_w
+                        st.session_state.player_points[p_k] += pts_k
+                        st.success(f"✅ {team_w} {pts_w} – {team_k} {pts_k}")
+                else:
+                    st.write("**Team/Pair score per hole**")
+                    df_pair = pd.DataFrame({
+                        "Hole": list(range(1,19)),
+                        f"{team_w} Pair Score": match["scores_w"],
+                        f"{team_k} Pair Score": match["scores_k"],
+                        "Result": [""]*18
+                    })
+                    edited_pair = st.data_editor(df_pair, width="stretch", hide_index=True, key=f"edit_pair_{m_key}")
+                    if st.button("✅ Update Pair Match", key=f"up_{m_key}"):
+                        pts_w = pts_k = 0.0
+                        for h in range(18):
+                            aw = edited_pair.iloc[h, 1]
+                            ak = edited_pair.iloc[h, 2]
+                            if aw > 0 and ak > 0:
+                                if aw < ak:
+                                    pts_w += 1
+                                    edited_pair.iloc[h, 3] = f"{team_w} wins"
+                                elif ak < aw:
+                                    pts_k += 1
+                                    edited_pair.iloc[h, 3] = f"{team_k} wins"
+                                else:
+                                    pts_w += 0.5
+                                    pts_k += 0.5
+                                    edited_pair.iloc[h, 3] = "Halved"
+                        match["points_w"] = pts_w
+                        match["points_k"] = pts_k
+                        match["scores_w"] = edited_pair.iloc[:,1].tolist()
+                        match["scores_k"] = edited_pair.iloc[:,2].tolist()
+                        match["completed"] = True
+                        for pw in match["players_w"]:
+                            st.session_state.player_points[pw] += pts_w
+                        for pk in match["players_k"]:
+                            st.session_state.player_points[pk] += pts_k
+                        st.success(f"✅ Pair points recorded")
 
 with tab_leaderboard:
     col1, col2 = st.columns(2)
