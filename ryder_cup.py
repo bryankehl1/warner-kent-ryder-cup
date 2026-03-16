@@ -14,7 +14,6 @@ const firebaseConfig = {
   messagingSenderId: "364132704196",
   appId: "1:364132704196:web:4348ae83bb93eb1ecf8e91"
 };
-}
 
 # Initialize Firebase
 firebase = pyrebase.initialize_app(firebaseConfig)
