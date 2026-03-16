@@ -5,7 +5,7 @@ from datetime import datetime
 import pyrebase
 
 # ── Your Firebase config (PASTE YOUR VALUES HERE FROM FIREBASE CONSOLE) ──
-const firebaseConfig = {
+firebaseConfig = {
   apiKey: "AIzaSyBHxFmZYsVSm4clbXpE4u-1LFZSW8Mg5CE",
   authDomain: "warner-kent-ryder-cup.firebaseapp.com",
   databaseURL: "https://warner-kent-ryder-cup-default-rtdb.firebaseio.com",
