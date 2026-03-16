@@ -77,11 +77,11 @@ st.markdown("""
         font-size: 1.1rem !important;
         text-align: center;
         padding: 0.2rem !important;
-        height: 2.2rem !important;
+        height: 1.9rem !important;
     }
     .stNumberInput [data-testid="stNumberInputStepDown"],
     .stNumberInput [data-testid="stNumberInputStepUp"] {
-        height: 2.2rem !important;
+        height: 1.9rem !important;
         font-size: 1rem !important;
     }
 
@@ -109,7 +109,8 @@ st.title("⛳ Warner vs Kent Ryder Cup")
 # ─────────────────────────────────────────────
 def init_state():
     for key, default in [("players",{}),("matches",{}),
-                          ("player_points",{}),("firebase_loaded",False)]:
+                          ("player_points",{}),("firebase_loaded",False),
+                          ("warner_name","Team Warner"),("kent_name","Team Kent")]:
         if key not in st.session_state:
             st.session_state[key] = default
 
@@ -124,6 +125,8 @@ def load_from_firebase():
         st.session_state.players       = data.get("players",       st.session_state.players)
         st.session_state.matches       = data.get("matches",       st.session_state.matches)
         st.session_state.player_points = data.get("player_points", st.session_state.player_points)
+        st.session_state.warner_name   = data.get("warner_name",   st.session_state.warner_name)
+        st.session_state.kent_name     = data.get("kent_name",     st.session_state.kent_name)
         st.session_state.firebase_loaded = True
     except Exception as e:
         st.warning(f"⚠️ Firebase load failed: {e}. Using local state.")
@@ -131,14 +134,33 @@ def load_from_firebase():
 if not st.session_state.firebase_loaded:
     load_from_firebase()
 
+# ── Auto-repair: detect Warner/Kent from player keys, override any swapped DB values ──
+_pd = st.session_state.players
+for _k in list(_pd.keys()):
+    if "warner" in _k.lower():
+        st.session_state.warner_name = _k
+    elif "kent" in _k.lower():
+        st.session_state.kent_name = _k
+
 # ─────────────────────────────────────────────
 # HELPERS
 # ─────────────────────────────────────────────
 def get_teams():
+    # Identify teams by matching "warner"/"kent" in stored key names.
+    # This makes identity completely independent of storage order.
     pd_ = st.session_state.players
     keys = list(pd_.keys())
-    tw = keys[0] if len(keys) > 0 else "Team Warner"
-    tk = keys[1] if len(keys) > 1 else "Team Kent"
+    tw, tk = None, None
+    for k in keys:
+        if "warner" in k.lower():
+            tw = k
+        elif "kent" in k.lower():
+            tk = k
+    # Fallback: if names don't contain warner/kent, use explicit saved keys
+    if tw is None:
+        tw = st.session_state.get("warner_name", keys[0] if keys else "Team Warner")
+    if tk is None:
+        tk = st.session_state.get("kent_name", keys[1] if len(keys) > 1 else "Team Kent")
     wl = pd_.get(tw, ["W1","W2","W3","W4"])
     kl = pd_.get(tk, ["K1","K2","K3","K4"])
     return tw, tk, wl, kl
@@ -273,9 +295,9 @@ with tab_players:
 
     col_tw, col_tk = st.columns(2)
     with col_tw:
-        tw_input = st.text_input("🩷 Warner team name", tw_tmp, key="team_w_name")
+        tw_input = st.text_input("🩷 Warner (Pink) team name", tw_tmp, key="team_w_name")
     with col_tk:
-        tk_input = st.text_input("🟢 Kent team name",   tk_tmp, key="team_k_name")
+        tk_input = st.text_input("🟢 Kent (Green) team name", tk_tmp, key="team_k_name")
     st.divider()
 
     col_w, col_k = st.columns(2)
@@ -293,8 +315,12 @@ with tab_players:
         ]
 
     if st.button("💾 Save Player Names", use_container_width=True):
-        st.session_state.players = {tw_input: w_inputs, tk_input: k_inputs}
+        st.session_state.players    = {tw_input: w_inputs, tk_input: k_inputs}
+        st.session_state.warner_name = tw_input
+        st.session_state.kent_name   = tk_input
         db.child("players").set(st.session_state.players)
+        db.child("warner_name").set(tw_input)
+        db.child("kent_name").set(tk_input)
         st.success("✅ Player names saved & synced!")
         st.rerun()
 
@@ -401,7 +427,7 @@ with tab_scores:
         while len(saved_k) < 18: saved_k.append(0)
 
         # Column header
-        h_col, w_col, k_col = st.columns([1,3,3])
+        h_col, w_col, k_col = st.columns([1,4,4])
         h_col.markdown("**#**")
         w_col.markdown(f"<span class='warner'>🩷 {team_w}<br><small>{pw_names}</small></span>",
                        unsafe_allow_html=True)
@@ -412,9 +438,9 @@ with tab_scores:
         new_scores_k = []
 
         for h in range(18):
-            h_col, w_col, k_col = st.columns([1,3,3])
+            h_col, w_col, k_col = st.columns([1,4,4])
             h_col.markdown(
-                f"<div style='padding-top:0.35rem;font-weight:700;font-size:0.9rem'>{h+1}</div>",
+                f"<div style='padding-top:0.2rem;font-weight:700;font-size:0.85rem'>{h+1}</div>",
                 unsafe_allow_html=True)
             sw = w_col.number_input("w", min_value=0, max_value=20, step=1,
                 value=int(saved_w[h]), key=f"sw_{selected_key}_{h}",
