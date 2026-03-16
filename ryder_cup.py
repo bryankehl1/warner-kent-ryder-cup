@@ -69,8 +69,8 @@ st.markdown("""
     .hole-h { color: #555; }
 
     /* Leaderboard team banners */
-    .team-banner-w {
-        background: #FF6B7A;
+    .team-banner-k {
+        background: #1a7a6e;
         color: white;
         border-radius: 12px;
         padding: 1rem;
@@ -79,8 +79,8 @@ st.markdown("""
         font-weight: bold;
         margin-bottom: 0.5rem;
     }
-    .team-banner-k {
-        background: #1a7a6e;
+    .team-banner-w {
+        background: #FF6B7A;
         color: white;
         border-radius: 12px;
         padding: 1rem;
