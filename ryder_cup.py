@@ -60,10 +60,20 @@ with st.sidebar:
         st.success("Players saved & synced!")
         st.rerun()
 
-team_w = list(st.session_state.players.keys())[0]
-team_k = list(st.session_state.players.keys())[1]
-w_list = st.session_state.players[team_w]
-k_list = st.session_state.players[team_k]
+# Get team names safely – fallback if players dict is empty
+players_dict = st.session_state.get("players", {})
+if players_dict:
+    team_w = list(players_dict.keys())[0]
+    team_k = list(players_dict.keys())[1] if len(players_dict) > 1 else "Team Kent"
+    w_list = players_dict.get(team_w, ["Player W1", "Player W2", "Player W3", "Player W4"])
+    k_list = players_dict.get(team_k, ["Player K1", "Player K2", "Player K3", "Player K4"])
+else:
+    # Fallback when no players loaded yet
+    team_w = "Team Warner"
+    team_k = "Team Kent"
+    w_list = ["Player W1", "Player W2", "Player W3", "Player W4"]
+    k_list = ["Player K1", "Player K2", "Player K3", "Player K4"]
+    st.session_state.players = {team_w: w_list, team_k: k_list}
 
 # ── Tabs at top ──
 tab_setup, tab_scores, tab_lb, tab_pp = st.tabs(["Setup", "Enter Scores", "Leaderboard", "Player Points"])
