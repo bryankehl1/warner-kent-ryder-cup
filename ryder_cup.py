@@ -64,13 +64,13 @@ st.markdown("""
     }
 
     /* Score row highlights */
-    .hole-w { color: #1565C0; font-weight: bold; }
-    .hole-k { color: #b71c1c; font-weight: bold; }
+    .hole-w { color: #c06450; font-weight: bold; }
+    .hole-k { color: #1a7a6e; font-weight: bold; }
     .hole-h { color: #555; }
 
     /* Leaderboard team banners */
     .team-banner-w {
-        background: #1565C0;
+        background: #d4755f;
         color: white;
         border-radius: 12px;
         padding: 1rem;
@@ -80,7 +80,7 @@ st.markdown("""
         margin-bottom: 0.5rem;
     }
     .team-banner-k {
-        background: #b71c1c;
+        background: #1a7a6e;
         color: white;
         border-radius: 12px;
         padding: 1rem;
@@ -335,22 +335,22 @@ with tab_players:
     # ── Team names ──
     col_tw, col_tk = st.columns(2)
     with col_tw:
-        tw_input = st.text_input("🔵 Team name", tw_tmp, key="team_w_name")
+        tw_input = st.text_input("🟠 Team name", tw_tmp, key="team_w_name")
     with col_tk:
-        tk_input = st.text_input("🔴 Team name", tk_tmp, key="team_k_name")
+        tk_input = st.text_input("🟢 Team name", tk_tmp, key="team_k_name")
 
     st.divider()
 
     # ── Player names – big touch-friendly inputs ──
     col_w, col_k = st.columns(2)
     with col_w:
-        st.markdown(f"**🔵 {tw_input} Players**")
+        st.markdown(f"**🟠 {tw_input} Players**")
         w_inputs = [
             st.text_input(f"Player {i+1}", wl_tmp[i] if i < len(wl_tmp) else f"W{i+1}", key=f"wp_tab_{i}")
             for i in range(4)
         ]
     with col_k:
-        st.markdown(f"**🔴 {tk_input} Players**")
+        st.markdown(f"**🟢 {tk_input} Players**")
         k_inputs = [
             st.text_input(f"Player {i+1}", kl_tmp[i] if i < len(kl_tmp) else f"K{i+1}", key=f"kp_tab_{i}")
             for i in range(4)
@@ -398,7 +398,7 @@ with tab_players:
                         cur_w = m.get("players_w", [w_list_p[0]])[0]
                         idx_w = w_list_p.index(cur_w) if cur_w in w_list_p else 0
                         sel_w = st.selectbox(
-                            f"🔵 {team_w_p}",
+                            f"🟠 {team_w_p}",
                             w_list_p,
                             index=idx_w,
                             key=f"pair_w_{key}"
@@ -407,7 +407,7 @@ with tab_players:
                         cur_k = m.get("players_k", [k_list_p[0]])[0]
                         idx_k = k_list_p.index(cur_k) if cur_k in k_list_p else 0
                         sel_k = st.selectbox(
-                            f"🔴 {team_k_p}",
+                            f"🟢 {team_k_p}",
                             k_list_p,
                             index=idx_k,
                             key=f"pair_k_{key}"
@@ -423,7 +423,7 @@ with tab_players:
                     with col_a:
                         cur_pw = [p for p in m.get("players_w", []) if p in w_list_p]
                         sel_pw = st.multiselect(
-                            f"🔵 {team_w_p} Pair",
+                            f"🟠 {team_w_p} Pair",
                             w_list_p,
                             default=cur_pw,
                             max_selections=2,
@@ -432,7 +432,7 @@ with tab_players:
                     with col_b:
                         cur_pk = [p for p in m.get("players_k", []) if p in k_list_p]
                         sel_pk = st.multiselect(
-                            f"🔴 {team_k_p} Pair",
+                            f"🟢 {team_k_p} Pair",
                             k_list_p,
                             default=cur_pk,
                             max_selections=2,
@@ -478,8 +478,8 @@ with tab_scores:
         st.markdown(f"""
         <div class='match-card'>
         <b>{selected_key}</b> · {fmt}<br>
-        🔵 {team_w}: <b>{' & '.join(m.get('players_w', []))}</b><br>
-        🔴 {team_k}: <b>{' & '.join(m.get('players_k', []))}</b>
+        <span style='color:#d4755f;font-weight:bold'>🟠 {team_w}</span>: <b>{' & '.join(m.get('players_w', []))}</b><br>
+        <span style='color:#1a7a6e;font-weight:bold'>🟢 {team_k}</span>: <b>{' & '.join(m.get('players_k', []))}</b>
         </div>
         """, unsafe_allow_html=True)
 
@@ -499,8 +499,8 @@ with tab_scores:
 
         col_h, col_w, col_k = st.columns([1, 3, 3])
         col_h.markdown("**Hole**")
-        col_w.markdown(f"**🔵 {team_w}**")
-        col_k.markdown(f"**🔴 {team_k}**")
+        col_w.markdown(f"**🟠 {team_w}**")
+        col_k.markdown(f"**🟢 {team_k}**")
 
         new_scores_w = []
         new_scores_k = []
@@ -537,8 +537,8 @@ with tab_scores:
             # Mini scorecard
             result_row = []
             for r in hole_results:
-                if r == "W":    result_row.append(f"🔵")
-                elif r == "K":  result_row.append(f"🔴")
+                if r == "W":    result_row.append(f"🟠")
+                elif r == "K":  result_row.append(f"🟢")
                 elif r == "H":  result_row.append(f"⚪")
                 else:           result_row.append("·")
             # Show in 2 rows of 9
@@ -623,9 +623,9 @@ with tab_lb:
         pk_str = " & ".join(m.get("players_k", []))
 
         if pts_w > pts_k:
-            result_icon = "🔵"
+            result_icon = "🟠"
         elif pts_k > pts_w:
-            result_icon = "🔴"
+            result_icon = "🟢"
         elif pts_w == 0.5:
             result_icon = "⚪"
         else:
@@ -654,10 +654,10 @@ with tab_pp:
             # Determine team
             if player in w_list:
                 team_label = team_w
-                color = "🔵"
+                color = "🟠"
             elif player in k_list:
                 team_label = team_k
-                color = "🔴"
+                color = "🟢"
             else:
                 team_label = "Unknown"
                 color = "⚪"
