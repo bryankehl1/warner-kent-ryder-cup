@@ -33,7 +33,6 @@ st.caption("4 Rounds • 10 Matches • Mobile-friendly • Live Team & Player P
 with st.sidebar:
     st.header("Teams & Players")
     
-    # Get current team names safely
     current_teams = list(st.session_state.players.keys())
     team_w_name = current_teams[0] if current_teams else "Team Warner"
     team_k_name = current_teams[1] if len(current_teams) > 1 else "Team Kent"
@@ -57,16 +56,14 @@ with st.sidebar:
 
     if st.button("💾 Save Teams & Players"):
         st.session_state.players = {team_w: w_players, team_k: k_players}
-        # Update player points keys
         all_players = w_players + k_players
         st.session_state.player_points = {p: st.session_state.player_points.get(p, 0.0) for p in all_players}
         st.success("Players saved!")
         st.rerun()
 
     st.divider()
-    st.caption("Add to Home Screen on iPhone for app feel")
+    st.caption("Add to Home Screen on iPhone")
 
-# Current loaded players
 team_w = list(st.session_state.players.keys())[0]
 team_k = list(st.session_state.players.keys())[1]
 w_list = st.session_state.players[team_w]
@@ -184,9 +181,16 @@ with tab_rounds:
                             sw = edited.iloc[h, 1]
                             sk = edited.iloc[h, 2]
                             if sw > 0 and sk > 0:
-                                if sw < sk: pts_w += 1; edited.iloc[h, 3] = team_w
-                                elif sk < sw: pts_k += 1; edited.iloc[h, 3] = team_k
-                                else: pts_w += pts_k += 0.5; edited.iloc[h, 3] = "½"
+                                if sw < sk:
+                                    pts_w += 1
+                                    edited.iloc[h, 3] = team_w
+                                elif sk < sw:
+                                    pts_k += 1
+                                    edited.iloc[h, 3] = team_k
+                                else:
+                                    pts_w += 0.5
+                                    pts_k += 0.5
+                                    edited.iloc[h, 3] = "½"
                         match["points_w"] = pts_w
                         match["points_k"] = pts_k
                         match["completed"] = True
@@ -207,9 +211,16 @@ with tab_rounds:
                             aw = edited.iloc[h, 1]
                             ak = edited.iloc[h, 2]
                             if aw > 0 and ak > 0:
-                                if aw < ak: pts_w += 1; edited.iloc[h, 3] = f"{team_w} wins"
-                                elif ak < aw: pts_k += 1; edited.iloc[h, 3] = f"{team_k} wins"
-                                else: pts_w += pts_k += 0.5; edited.iloc[h, 3] = "Halved"
+                                if aw < ak:
+                                    pts_w += 1
+                                    edited.iloc[h, 3] = f"{team_w} wins"
+                                elif ak < aw:
+                                    pts_k += 1
+                                    edited.iloc[h, 3] = f"{team_k} wins"
+                                else:
+                                    pts_w += 0.5
+                                    pts_k += 0.5
+                                    edited.iloc[h, 3] = "Halved"
                         match["points_w"] = pts_w
                         match["points_k"] = pts_k
                         match["scores_w"] = edited.iloc[:,1].tolist()
