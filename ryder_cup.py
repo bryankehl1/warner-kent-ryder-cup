@@ -6,14 +6,14 @@ import pyrebase
 
 # ── Your Firebase config (PASTE YOUR VALUES HERE FROM FIREBASE CONSOLE) ──
 firebaseConfig = {
-  apiKey: "AIzaSyBHxFmZYsVSm4clbXpE4u-1LFZSW8Mg5CE",
-  authDomain: "warner-kent-ryder-cup.firebaseapp.com",
-  databaseURL: "https://warner-kent-ryder-cup-default-rtdb.firebaseio.com",
-  projectId: "warner-kent-ryder-cup",
-  storageBucket: "warner-kent-ryder-cup.firebasestorage.app",
-  messagingSenderId: "364132704196",
-  appId: "1:364132704196:web:4348ae83bb93eb1ecf8e91"
-};
+    "apiKey": "AIzaSyBHxFmZYsVSm4clbXpE4u-1LFZSW8Mg5CE",
+    "authDomain": "warner-kent-ryder-cup.firebaseapp.com",
+    "databaseURL": "https://warner-kent-ryder-cup-default-rtdb.firebaseio.com",
+    "projectId": "warner-kent-ryder-cup",
+    "storageBucket": "warner-kent-ryder-cup.firebasestorage.app",
+    "messagingSenderId": "364132704196",
+    "appId": "1:364132704196:web:4348ae83bb93eb1ecf8e91"
+}
 
 # Initialize Firebase
 firebase = pyrebase.initialize_app(firebaseConfig)
