@@ -64,13 +64,13 @@ st.markdown("""
     }
 
     /* Score row highlights */
-    .hole-w { color: #c06450; font-weight: bold; }
+    .hole-w { color: #d95f8e; font-weight: bold; }
     .hole-k { color: #1a7a6e; font-weight: bold; }
     .hole-h { color: #555; }
 
     /* Leaderboard team banners */
     .team-banner-w {
-        background: #d4755f;
+        background: #d95f8e;
         color: white;
         border-radius: 12px;
         padding: 1rem;
@@ -478,7 +478,7 @@ with tab_scores:
         st.markdown(f"""
         <div class='match-card'>
         <b>{selected_key}</b> · {fmt}<br>
-        <span style='color:#d4755f;font-weight:bold'>🟠 {team_w}</span>: <b>{' & '.join(m.get('players_w', []))}</b><br>
+        <span style='color:#d95f8e;font-weight:bold'>🟠 {team_w}</span>: <b>{' & '.join(m.get('players_w', []))}</b><br>
         <span style='color:#1a7a6e;font-weight:bold'>🟢 {team_k}</span>: <b>{' & '.join(m.get('players_k', []))}</b>
         </div>
         """, unsafe_allow_html=True)
@@ -497,10 +497,13 @@ with tab_scores:
         while len(saved_w) < 18: saved_w.append(0)
         while len(saved_k) < 18: saved_k.append(0)
 
+        pw_names = " & ".join(m.get("players_w", [])) or team_w
+        pk_names = " & ".join(m.get("players_k", [])) or team_k
+
         col_h, col_w, col_k = st.columns([1, 3, 3])
         col_h.markdown("**Hole**")
-        col_w.markdown(f"**🟠 {team_w}**")
-        col_k.markdown(f"**🟢 {team_k}**")
+        col_w.markdown(f"<span style='color:#d95f8e;font-weight:700'>🟠 {team_w}</span><br><small style='color:#555'>{pw_names}</small>", unsafe_allow_html=True)
+        col_k.markdown(f"<span style='color:#1a7a6e;font-weight:700'>🟢 {team_k}</span><br><small style='color:#555'>{pk_names}</small>", unsafe_allow_html=True)
 
         new_scores_w = []
         new_scores_k = []
