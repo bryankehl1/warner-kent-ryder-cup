@@ -234,34 +234,16 @@ def recalculate_player_points():
     db.child("player_points").set(pp)
 
 # ─────────────────────────────────────────────
-# SIDEBAR – TEAM SETUP
+# SIDEBAR – minimal, just nav helpers
 # ─────────────────────────────────────────────
 with st.sidebar:
-    st.header("🏌️ Teams & Players")
-    tw_input = st.text_input("Team Warner name", "Team Warner")
-    tk_input = st.text_input("Team Kent name", "Team Kent")
-
-    st.markdown("**Warner Players**")
-    tw_tmp, tk_tmp, wl_tmp, kl_tmp = get_teams()
-    w_inputs = [
-        st.text_input(f"W{i+1}", wl_tmp[i] if i < len(wl_tmp) else "", key=f"wp_{i}")
-        for i in range(4)
-    ]
-    st.markdown("**Kent Players**")
-    k_inputs = [
-        st.text_input(f"K{i+1}", kl_tmp[i] if i < len(kl_tmp) else "", key=f"kp_{i}")
-        for i in range(4)
-    ]
-
-    if st.button("💾 Save Players"):
-        st.session_state.players = {tw_input: w_inputs, tk_input: k_inputs}
-        db.child("players").set(st.session_state.players)
-        st.success("Players saved & synced!")
-        st.rerun()
-
+    st.header("⛳ Warner vs Kent")
+    st.markdown("Use the **👥 Players** tab to set names & pairings.")
+    st.divider()
     if st.button("🔄 Refresh from Firebase"):
         st.session_state.firebase_loaded = False
         st.rerun()
+    st.caption("All changes sync live via Firebase.")
 
 # Re-derive after possible sidebar save
 team_w, team_k, w_list, k_list = get_teams()
@@ -269,7 +251,7 @@ team_w, team_k, w_list, k_list = get_teams()
 # ─────────────────────────────────────────────
 # TABS
 # ─────────────────────────────────────────────
-tab_setup, tab_scores, tab_lb, tab_pp = st.tabs(["⚙️ Setup", "🏌️ Scores", "🏆 Leaderboard", "👤 Player Points"])
+tab_setup, tab_players, tab_scores, tab_lb, tab_pp = st.tabs(["⚙️ Setup", "👥 Players", "🏌️ Scores", "🏆 Leaderboard", "👤 Points"])
 
 # ══════════════════════════════════════════════
 # TAB 1 – SETUP
@@ -343,10 +325,139 @@ with tab_setup:
             st.rerun()
 
 # ══════════════════════════════════════════════
-# TAB 2 – ENTER SCORES
+# TAB 2 – PLAYERS & PAIRINGS
+# ══════════════════════════════════════════════
+with tab_players:
+    st.subheader("👥 Team Names & Players")
+
+    tw_tmp, tk_tmp, wl_tmp, kl_tmp = get_teams()
+
+    # ── Team names ──
+    col_tw, col_tk = st.columns(2)
+    with col_tw:
+        tw_input = st.text_input("🔵 Team name", tw_tmp, key="team_w_name")
+    with col_tk:
+        tk_input = st.text_input("🔴 Team name", tk_tmp, key="team_k_name")
+
+    st.divider()
+
+    # ── Player names – big touch-friendly inputs ──
+    col_w, col_k = st.columns(2)
+    with col_w:
+        st.markdown(f"**🔵 {tw_input} Players**")
+        w_inputs = [
+            st.text_input(f"Player {i+1}", wl_tmp[i] if i < len(wl_tmp) else f"W{i+1}", key=f"wp_tab_{i}")
+            for i in range(4)
+        ]
+    with col_k:
+        st.markdown(f"**🔴 {tk_input} Players**")
+        k_inputs = [
+            st.text_input(f"Player {i+1}", kl_tmp[i] if i < len(kl_tmp) else f"K{i+1}", key=f"kp_tab_{i}")
+            for i in range(4)
+        ]
+
+    if st.button("💾 Save Player Names", use_container_width=True):
+        st.session_state.players = {tw_input: w_inputs, tk_input: k_inputs}
+        db.child("players").set(st.session_state.players)
+        st.success("✅ Player names saved & synced!")
+        st.rerun()
+
+    st.divider()
+    st.subheader("🔀 Match Pairings")
+    st.markdown("Adjust who plays in each match. Changes save immediately.")
+
+    if not st.session_state.matches:
+        st.info("No matches yet – go to ⚙️ Setup and create matches first.")
+    else:
+        # Re-derive fresh lists after possible name save above
+        team_w_p, team_k_p, w_list_p, k_list_p = get_teams()
+
+        round_labels = {
+            "R1": "Round 1 – Foursomes",
+            "R2": "Round 2 – Fourball",
+            "R3": "Round 3 – Greensomes",
+            "R4": "Round 4 – Singles"
+        }
+        current_round = None
+
+        for key in sorted(st.session_state.matches.keys()):
+            m = st.session_state.matches[key]
+            fmt = m["format"]
+            rnd = key.split("-")[0]
+
+            if rnd != current_round:
+                current_round = rnd
+                st.markdown(f"##### {round_labels.get(rnd, rnd)}")
+
+            with st.container():
+                st.markdown(f"**{key}** · {fmt}")
+
+                if fmt == "Singles":
+                    col_a, col_b = st.columns(2)
+                    with col_a:
+                        cur_w = m.get("players_w", [w_list_p[0]])[0]
+                        idx_w = w_list_p.index(cur_w) if cur_w in w_list_p else 0
+                        sel_w = st.selectbox(
+                            f"🔵 {team_w_p}",
+                            w_list_p,
+                            index=idx_w,
+                            key=f"pair_w_{key}"
+                        )
+                    with col_b:
+                        cur_k = m.get("players_k", [k_list_p[0]])[0]
+                        idx_k = k_list_p.index(cur_k) if cur_k in k_list_p else 0
+                        sel_k = st.selectbox(
+                            f"🔴 {team_k_p}",
+                            k_list_p,
+                            index=idx_k,
+                            key=f"pair_k_{key}"
+                        )
+                    if st.button(f"✅ Save {key}", key=f"savepair_{key}", use_container_width=True):
+                        st.session_state.matches[key]["players_w"] = [sel_w]
+                        st.session_state.matches[key]["players_k"] = [sel_k]
+                        db.child("matches").child(key).update({"players_w": [sel_w], "players_k": [sel_k]})
+                        st.success(f"{key} updated: {sel_w} vs {sel_k}")
+                        st.rerun()
+                else:
+                    col_a, col_b = st.columns(2)
+                    with col_a:
+                        cur_pw = [p for p in m.get("players_w", []) if p in w_list_p]
+                        sel_pw = st.multiselect(
+                            f"🔵 {team_w_p} Pair",
+                            w_list_p,
+                            default=cur_pw,
+                            max_selections=2,
+                            key=f"pair_w_{key}"
+                        )
+                    with col_b:
+                        cur_pk = [p for p in m.get("players_k", []) if p in k_list_p]
+                        sel_pk = st.multiselect(
+                            f"🔴 {team_k_p} Pair",
+                            k_list_p,
+                            default=cur_pk,
+                            max_selections=2,
+                            key=f"pair_k_{key}"
+                        )
+                    pw_str = " & ".join(sel_pw) if sel_pw else "–"
+                    pk_str = " & ".join(sel_pk) if sel_pk else "–"
+                    st.caption(f"Current: {pw_str}  vs  {pk_str}")
+                    if st.button(f"✅ Save {key}", key=f"savepair_{key}", use_container_width=True):
+                        if len(sel_pw) == 2 and len(sel_pk) == 2:
+                            st.session_state.matches[key]["players_w"] = sel_pw
+                            st.session_state.matches[key]["players_k"] = sel_pk
+                            db.child("matches").child(key).update({"players_w": sel_pw, "players_k": sel_pk})
+                            st.success(f"{key} updated: {pw_str} vs {pk_str}")
+                            st.rerun()
+                        else:
+                            st.error("Please select exactly 2 players per team.")
+
+                st.markdown("---")
+
+# ══════════════════════════════════════════════
+# TAB 3 – ENTER SCORES
 # ══════════════════════════════════════════════
 with tab_scores:
-    st.subheader("Enter Scores")
+    st.subheader("🏌️ Enter Scores")
     match_keys = list(st.session_state.matches.keys())
 
     if not match_keys:
@@ -372,35 +483,7 @@ with tab_scores:
         </div>
         """, unsafe_allow_html=True)
 
-        # Player reassignment (optional, for flexibility)
-        with st.expander("✏️ Edit Players for this Match"):
-            if fmt == "Singles":
-                new_pw = st.selectbox("Warner Player", w_list,
-                    index=w_list.index(m["players_w"][0]) if m["players_w"] and m["players_w"][0] in w_list else 0,
-                    key=f"pw_{selected_key}")
-                new_pk = st.selectbox("Kent Player", k_list,
-                    index=k_list.index(m["players_k"][0]) if m["players_k"] and m["players_k"][0] in k_list else 0,
-                    key=f"pk_{selected_key}")
-                if st.button("Update Players", key=f"upd_{selected_key}"):
-                    st.session_state.matches[selected_key]["players_w"] = [new_pw]
-                    st.session_state.matches[selected_key]["players_k"] = [new_pk]
-                    db.child("matches").child(selected_key).update({"players_w": [new_pw], "players_k": [new_pk]})
-                    st.success("Players updated!")
-                    st.rerun()
-            else:
-                new_pw = st.multiselect("Warner Pair", w_list,
-                    default=[p for p in m.get("players_w", []) if p in w_list],
-                    max_selections=2, key=f"mpw_{selected_key}")
-                new_pk = st.multiselect("Kent Pair", k_list,
-                    default=[p for p in m.get("players_k", []) if p in k_list],
-                    max_selections=2, key=f"mpk_{selected_key}")
-                if st.button("Update Players", key=f"upd_{selected_key}"):
-                    st.session_state.matches[selected_key]["players_w"] = new_pw
-                    st.session_state.matches[selected_key]["players_k"] = new_pk
-                    db.child("matches").child(selected_key).update({"players_w": new_pw, "players_k": new_pk})
-                    st.success("Players updated!")
-                    st.rerun()
-
+        st.caption("✏️ Need to change pairings? Use the 👥 Players tab.")
         st.divider()
 
         # ── Hole-by-hole score entry ──
@@ -485,11 +568,10 @@ with tab_scores:
             st.rerun()
 
 # ══════════════════════════════════════════════
-# TAB 3 – LEADERBOARD
+# TAB 4 – LEADERBOARD
 # ══════════════════════════════════════════════
 with tab_lb:
     st.subheader("🏆 Team Leaderboard")
-
     total_w = sum(float(m.get("pts_w", 0)) for m in st.session_state.matches.values())
     total_k = sum(float(m.get("pts_k", 0)) for m in st.session_state.matches.values())
     total_available = 10.0
@@ -558,7 +640,7 @@ with tab_lb:
         st.markdown(f"{result_icon} **{key}**: {pw_str} vs {pk_str} · *{status}* · **{pts_w:.1f} – {pts_k:.1f}**")
 
 # ══════════════════════════════════════════════
-# TAB 4 – PLAYER POINTS
+# TAB 5 – PLAYER POINTS
 # ══════════════════════════════════════════════
 with tab_pp:
     st.subheader("👤 Individual Player Points")
