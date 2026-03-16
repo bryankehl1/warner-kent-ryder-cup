@@ -111,7 +111,20 @@ with tab_setup:
             fmt = custom_round.split(" - ")[1]
             key = f"{r}-M{custom_num}"
             if key not in st.session_state.matches:
-                st.session_state.matches[key] = { ...same dict as above... }  # (same structure as auto)
+                st.session_state.matches[key] = {
+    "round": r,
+    "format": fmt,
+    "players_w": w_list[:2] if fmt != "Singles" else [w_list[0]],
+    "players_k": k_list[:2] if fmt != "Singles" else [k_list[0]],
+    "holes": 18,
+    "scores_w": [0]*18,
+    "scores_k": [0]*18,
+    "individual_w": [0]*18 if fmt == "Singles" else None,
+    "individual_k": [0]*18 if fmt == "Singles" else None,
+    "points_w": 0.0,
+    "points_k": 0.0,
+    "completed": False
+}
                 st.success(f"✅ {key} created")
                 st.rerun()
             else:
