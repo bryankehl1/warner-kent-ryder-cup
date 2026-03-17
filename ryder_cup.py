@@ -19,7 +19,7 @@ firebase = pyrebase.initialize_app(firebaseConfig)
 db = firebase.database()
 
 # ─────────────────────────────────────────────
-# PAGE CONFIG & CSS
+# PAGE CONFIG
 # ─────────────────────────────────────────────
 st.set_page_config(
     page_title="Warner vs Kent Ryder Cup",
@@ -33,12 +33,13 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-    /* ── Force light mode – covers web + iOS Safari dark mode ── */
+    /* ══ FORCE LIGHT MODE ══ */
     html, body,
     [data-testid="stAppViewContainer"],
     [data-testid="stApp"],
     [data-testid="stMain"],
-    [data-testid="block-container"] {
+    [data-testid="block-container"],
+    [data-testid="stVerticalBlock"] {
         background-color: #f5f7f5 !important;
         color: #1a1a1a !important;
     }
@@ -47,13 +48,13 @@ st.markdown("""
         background-color: #ffffff !important;
         color: #1a1a1a !important;
     }
-    /* Override dark-mode media query on ALL devices */
     @media (prefers-color-scheme: dark) {
         html, body,
         [data-testid="stAppViewContainer"],
         [data-testid="stApp"],
         [data-testid="stMain"],
-        [data-testid="block-container"] {
+        [data-testid="block-container"],
+        [data-testid="stVerticalBlock"] {
             background-color: #f5f7f5 !important;
             color: #1a1a1a !important;
         }
@@ -62,27 +63,23 @@ st.markdown("""
             background-color: #ffffff !important;
             color: #1a1a1a !important;
         }
-        p, h1, h2, h3, h4, h5, h6, span, label, div {
+        p, h1, h2, h3, h4, h5, h6, span, label {
             color: #1a1a1a !important;
         }
-        .stSelectbox > div,
-        .stTextInput > div > div,
-        .stNumberInput > div > div {
+        .stNumberInput input, .stTextInput input {
             background-color: #ffffff !important;
             color: #1a1a1a !important;
         }
-        .stNumberInput input,
-        .stTextInput input,
-        .stSelectbox select {
+        .stSelectbox > div > div {
             background-color: #ffffff !important;
             color: #1a1a1a !important;
         }
     }
 
-    /* ── Base ── */
+    /* ══ BASE ══ */
     .stApp { padding: 0.5rem; }
 
-    /* ── Buttons ── */
+    /* ══ BUTTONS ══ */
     .stButton > button {
         width: 100%; min-height: 2.8rem; font-size: 1rem;
         border-radius: 10px; font-weight: 600;
@@ -90,51 +87,111 @@ st.markdown("""
         background-color: #2e7d32 !important;
         border: none;
     }
-    .stButton > button:hover  { background-color: #1b5e20 !important; color: #ffffff !important; }
-    .stButton > button:active { background-color: #1b5e20 !important; color: #ffffff !important; }
+    .stButton > button:hover  { background-color: #1b5e20 !important; }
+    .stButton > button:active { background-color: #1b5e20 !important; }
 
-    /* ── Compact number inputs ── */
+    /* ══ NUMBER INPUTS – compact ══ */
     .stNumberInput input {
         font-size: 1.1rem !important;
-        text-align: center;
+        text-align: center !important;
         padding: 0.2rem !important;
         height: 1.9rem !important;
     }
     .stNumberInput [data-testid="stNumberInputStepDown"],
     .stNumberInput [data-testid="stNumberInputStepUp"] {
         height: 1.9rem !important;
-        font-size: 1rem !important;
     }
 
-    /* ── Match card ── */
+    /* ══ SCORE INPUT COLOURS – by key ══ */
+    /* Warner inputs (keys start with sw_) → pink border + tint */
+    [data-testid*="sw_"] input {
+        border: 2.5px solid #FF6B7A !important;
+        background-color: #fff5f6 !important;
+        border-radius: 8px !important;
+        color: #1a1a1a !important;
+    }
+    /* Kent inputs (keys start with sk_) → green border + tint */
+    [data-testid*="sk_"] input {
+        border: 2.5px solid #1a7a6e !important;
+        background-color: #f0f8f6 !important;
+        border-radius: 8px !important;
+        color: #1a1a1a !important;
+    }
+
+    /* ══ MATCH CARD ══ */
     .match-card {
         background: white; border-radius: 12px;
-        padding: 0.8rem 1rem; margin: 0.4rem 0;
+        padding: 0.7rem 1rem; margin: 0.3rem 0;
         box-shadow: 0 2px 8px rgba(0,0,0,0.07);
-        font-size: 0.95rem;
+        font-size: 0.92rem; line-height: 1.5;
     }
 
-    /* ── Team colour helpers ── */
+    /* ══ STICKY LIVE STATUS BAR ══ */
+    .live-bar {
+        position: sticky;
+        top: 0;
+        z-index: 999;
+        background: #ffffff;
+        border-left: 4px solid #2e7d32;
+        border-radius: 0 10px 10px 0;
+        padding: 0.45rem 0.8rem;
+        margin-bottom: 0.6rem;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.12);
+        font-size: 0.88rem;
+    }
+
+    /* ══ SCORE GRID HEADER ══ */
+    .score-hdr-w {
+        background: #fff0f3;
+        border: 2px solid #FF6B7A;
+        border-radius: 8px;
+        padding: 0.2rem 0.4rem;
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: #FF6B7A;
+        text-align: center;
+    }
+    .score-hdr-k {
+        background: #f0f8f6;
+        border: 2px solid #1a7a6e;
+        border-radius: 8px;
+        padding: 0.2rem 0.4rem;
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: #1a7a6e;
+        text-align: center;
+    }
+
+    /* ══ FLOWER LABEL pill – sits inline above input on mobile ══ */
+    .pill-w {
+        display: inline-block;
+        background: #FF6B7A;
+        color: white;
+        border-radius: 20px;
+        padding: 0.1rem 0.5rem;
+        font-size: 0.72rem;
+        font-weight: 700;
+        margin-bottom: 0.15rem;
+        white-space: nowrap;
+    }
+    .pill-k {
+        display: inline-block;
+        background: #1a7a6e;
+        color: white;
+        border-radius: 20px;
+        padding: 0.1rem 0.5rem;
+        font-size: 0.72rem;
+        font-weight: 700;
+        margin-bottom: 0.15rem;
+        white-space: nowrap;
+    }
+
+    /* ══ TEAM COLOURS ══ */
     .warner { color: #FF6B7A !important; font-weight: 700; }
     .kent   { color: #1a7a6e !important; font-weight: 700; }
 
-    /* ── VS text ── */
+    /* ══ LEADERBOARD ══ */
     .vs-text { text-align:center; font-size:1.1rem; color:#555; padding-top:1.2rem; }
-
-    /* ── Colored score inputs via key-based selectors ── */
-    /* Streamlit gives each widget a data-testid containing its key */
-    [data-testid*="sw_"] input {
-        border: 2px solid #FF6B7A !important;
-        border-radius: 8px !important;
-        background-color: #fff5f6 !important;
-        color: #1a1a1a !important;
-    }
-    [data-testid*="sk_"] input {
-        border: 2px solid #1a7a6e !important;
-        border-radius: 8px !important;
-        background-color: #f0f8f6 !important;
-        color: #1a1a1a !important;
-    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -144,12 +201,11 @@ st.title("⛳ Warner vs Kent Ryder Cup")
 # SESSION STATE
 # ─────────────────────────────────────────────
 def init_state():
-    for key, default in [("players",{}),("matches",{}),
-                          ("player_points",{}),("firebase_loaded",False),
-                          ("warner_name","Team Warner"),("kent_name","Team Kent")]:
-        if key not in st.session_state:
-            st.session_state[key] = default
-
+    for k, v in [("players",{}),("matches",{}),("player_points",{}),
+                 ("firebase_loaded",False),
+                 ("warner_name","Team Warner"),("kent_name","Team Kent")]:
+        if k not in st.session_state:
+            st.session_state[k] = v
 init_state()
 
 # ─────────────────────────────────────────────
@@ -170,9 +226,8 @@ def load_from_firebase():
 if not st.session_state.firebase_loaded:
     load_from_firebase()
 
-# ── Auto-repair: detect Warner/Kent from player keys, override any swapped DB values ──
-_pd = st.session_state.players
-for _k in list(_pd.keys()):
+# Auto-repair: detect team identity from stored player key names
+for _k in list(st.session_state.players.keys()):
     if "warner" in _k.lower():
         st.session_state.warner_name = _k
     elif "kent" in _k.lower():
@@ -182,53 +237,39 @@ for _k in list(_pd.keys()):
 # HELPERS
 # ─────────────────────────────────────────────
 def get_teams():
-    # Identify teams by matching "warner"/"kent" in stored key names.
-    # This makes identity completely independent of storage order.
     pd_ = st.session_state.players
     keys = list(pd_.keys())
     tw, tk = None, None
     for k in keys:
-        if "warner" in k.lower():
-            tw = k
-        elif "kent" in k.lower():
-            tk = k
-    # Fallback: if names don't contain warner/kent, use explicit saved keys
-    if tw is None:
-        tw = st.session_state.get("warner_name", keys[0] if keys else "Team Warner")
-    if tk is None:
-        tk = st.session_state.get("kent_name", keys[1] if len(keys) > 1 else "Team Kent")
+        if "warner" in k.lower(): tw = k
+        elif "kent" in k.lower(): tk = k
+    if tw is None: tw = st.session_state.get("warner_name", keys[0] if keys else "Team Warner")
+    if tk is None: tk = st.session_state.get("kent_name",   keys[1] if len(keys)>1 else "Team Kent")
     wl = pd_.get(tw, ["W1","W2","W3","W4"])
     kl = pd_.get(tk, ["K1","K2","K3","K4"])
     return tw, tk, wl, kl
 
 def calculate_match_play(scores_w, scores_k, fmt):
-    hole_results = []
-    w_up = 0
-    holes_played = 0
-    match_over_at = None
+    hole_results, w_up, holes_played, match_over_at = [], 0, 0, None
     for h in range(18):
         sw, sk = scores_w[h], scores_k[h]
-        if sw == 0 and sk == 0:
-            hole_results.append(None); continue
+        if sw == 0 and sk == 0: hole_results.append(None); continue
         holes_played += 1
         if sw < sk:   hole_results.append("W"); w_up += 1
         elif sk < sw: hole_results.append("K"); w_up -= 1
         else:         hole_results.append("H")
-        holes_left = 18 - (h + 1)
-        if abs(w_up) > holes_left and match_over_at is None:
-            match_over_at = h + 1
-    if holes_played == 0:
-        return 0.0, 0.0, hole_results, "Not started"
-    holes_left = 18 - holes_played
+        if abs(w_up) > 18-(h+1) and match_over_at is None: match_over_at = h+1
+    if holes_played == 0: return 0.0, 0.0, hole_results, "Not started"
+    hl = 18 - holes_played
     if w_up > 0:
-        status = f"Warner wins {w_up}&{holes_left}" if match_over_at else f"Warner {w_up} UP"
+        status = f"Warner wins {w_up}&{hl}" if match_over_at else f"Warner {w_up} UP"
         pts_w, pts_k = 1.0, 0.0
     elif w_up < 0:
-        m = abs(w_up)
-        status = f"Kent wins {m}&{holes_left}" if match_over_at else f"Kent {m} UP"
+        mg = abs(w_up)
+        status = f"Kent wins {mg}&{hl}" if match_over_at else f"Kent {mg} UP"
         pts_w, pts_k = 0.0, 1.0
     else:
-        status = "All Square"; pts_w, pts_k = 0.5, 0.5
+        status, pts_w, pts_k = "All Square", 0.5, 0.5
     if holes_played < 18 and match_over_at is None:
         pts_w = pts_k = 0.0; status += " (in progress)"
     return pts_w, pts_k, hole_results, status
@@ -240,6 +281,15 @@ def recalculate_player_points():
         for p in m.get("players_k",[]): pp[p] = pp.get(p,0.0) + m.get("pts_k",0.0)
     st.session_state.player_points = pp
     db.child("player_points").set(pp)
+
+def hole_symbols(hole_results):
+    out = []
+    for r in hole_results:
+        if r == "W":   out.append("<span style='color:#FF6B7A'>🌺</span>")
+        elif r == "K": out.append("<span style='color:#1a7a6e'>🌿</span>")
+        elif r == "H": out.append("<span style='color:#888'>·</span>")
+        else:          out.append("<span style='color:#ccc'>·</span>")
+    return "".join(out)
 
 # ─────────────────────────────────────────────
 # SIDEBAR
@@ -331,27 +381,27 @@ with tab_players:
 
     col_tw, col_tk = st.columns(2)
     with col_tw:
-        tw_input = st.text_input("🩷 Warner (Pink) team name", tw_tmp, key="team_w_name")
+        tw_input = st.text_input("🌺 Warner (Pink) team name", tw_tmp, key="team_w_name")
     with col_tk:
-        tk_input = st.text_input("🟢 Kent (Green) team name", tk_tmp, key="team_k_name")
+        tk_input = st.text_input("🌿 Kent (Green) team name", tk_tmp, key="team_k_name")
     st.divider()
 
     col_w, col_k = st.columns(2)
     with col_w:
-        st.markdown(f"<span class='warner'>🩷 {tw_input} Players</span>", unsafe_allow_html=True)
+        st.markdown(f"<span class='warner'>🌺 {tw_input} Players</span>", unsafe_allow_html=True)
         w_inputs = [
             st.text_input(f"Player {i+1}", wl_tmp[i] if i < len(wl_tmp) else f"W{i+1}", key=f"wp_tab_{i}")
             for i in range(4)
         ]
     with col_k:
-        st.markdown(f"<span class='kent'>🟢 {tk_input} Players</span>", unsafe_allow_html=True)
+        st.markdown(f"<span class='kent'>🌿 {tk_input} Players</span>", unsafe_allow_html=True)
         k_inputs = [
             st.text_input(f"Player {i+1}", kl_tmp[i] if i < len(kl_tmp) else f"K{i+1}", key=f"kp_tab_{i}")
             for i in range(4)
         ]
 
     if st.button("💾 Save Player Names", use_container_width=True):
-        st.session_state.players    = {tw_input: w_inputs, tk_input: k_inputs}
+        st.session_state.players     = {tw_input: w_inputs, tk_input: k_inputs}
         st.session_state.warner_name = tw_input
         st.session_state.kent_name   = tk_input
         db.child("players").set(st.session_state.players)
@@ -385,12 +435,12 @@ with tab_players:
                 col_a, col_b = st.columns(2)
                 with col_a:
                     cur_w = m.get("players_w",[w_list_p[0]])[0]
-                    sel_w = st.selectbox(f"🩷 {team_w_p}", w_list_p,
+                    sel_w = st.selectbox(f"🌺 {team_w_p}", w_list_p,
                         index=w_list_p.index(cur_w) if cur_w in w_list_p else 0,
                         key=f"pair_w_{key}")
                 with col_b:
                     cur_k = m.get("players_k",[k_list_p[0]])[0]
-                    sel_k = st.selectbox(f"🟢 {team_k_p}", k_list_p,
+                    sel_k = st.selectbox(f"🌿 {team_k_p}", k_list_p,
                         index=k_list_p.index(cur_k) if cur_k in k_list_p else 0,
                         key=f"pair_k_{key}")
                 if st.button(f"✅ Save {key}", key=f"savepair_{key}", use_container_width=True):
@@ -403,17 +453,17 @@ with tab_players:
                 col_a, col_b = st.columns(2)
                 with col_a:
                     cur_pw = [p for p in m.get("players_w",[]) if p in w_list_p]
-                    sel_pw = st.multiselect(f"🩷 {team_w_p} Pair", w_list_p,
+                    sel_pw = st.multiselect(f"🌺 {team_w_p} Pair", w_list_p,
                         default=cur_pw, max_selections=2, key=f"pair_w_{key}")
                 with col_b:
                     cur_pk = [p for p in m.get("players_k",[]) if p in k_list_p]
-                    sel_pk = st.multiselect(f"🟢 {team_k_p} Pair", k_list_p,
+                    sel_pk = st.multiselect(f"🌿 {team_k_p} Pair", k_list_p,
                         default=cur_pk, max_selections=2, key=f"pair_k_{key}")
                 pw_str = " & ".join(sel_pw) if sel_pw else "–"
                 pk_str = " & ".join(sel_pk) if sel_pk else "–"
                 st.caption(f"{pw_str} vs {pk_str}")
                 if st.button(f"✅ Save {key}", key=f"savepair_{key}", use_container_width=True):
-                    if len(sel_pw) == 2 and len(sel_pk) == 2:
+                    if len(sel_pw)==2 and len(sel_pk)==2:
                         st.session_state.matches[key]["players_w"] = sel_pw
                         st.session_state.matches[key]["players_k"] = sel_pk
                         db.child("matches").child(key).update({"players_w":sel_pw,"players_k":sel_pk})
@@ -424,7 +474,7 @@ with tab_players:
             st.markdown("---")
 
 # ══════════════════════════════════════════════
-# TAB 3 – ENTER SCORES  (condensed)
+# TAB 3 – ENTER SCORES
 # ══════════════════════════════════════════════
 with tab_scores:
     st.subheader("🏌️ Enter Scores")
@@ -434,10 +484,10 @@ with tab_scores:
         st.info("No matches yet – go to ⚙️ Setup and create matches first.")
     else:
         def fmt_key(k):
-            m  = st.session_state.matches[k]
-            pw = " & ".join(m.get("players_w",[]))
-            pk = " & ".join(m.get("players_k",[]))
-            return f"{k} ({m['format']}) · {pw} vs {pk}"
+            mx  = st.session_state.matches[k]
+            pw = " & ".join(mx.get("players_w",[]))
+            pk = " & ".join(mx.get("players_k",[]))
+            return f"{k} ({mx['format']}) · {pw} vs {pk}"
 
         selected_key = st.selectbox("Select Match", match_keys, format_func=fmt_key)
         m   = st.session_state.matches[selected_key]
@@ -446,12 +496,12 @@ with tab_scores:
         pw_names = " & ".join(m.get("players_w",[])) or team_w
         pk_names = " & ".join(m.get("players_k",[])) or team_k
 
-        # Compact match card — single line
+        # Match info card
         st.markdown(f"""
         <div class='match-card'>
-        <b>{selected_key}</b> · {fmt} &nbsp;|&nbsp;
-        <span class='warner'>🩷 {team_w}: {pw_names}</span> &nbsp;vs&nbsp;
-        <span class='kent'>🟢 {team_k}: {pk_names}</span>
+        <b>{selected_key}</b> · {fmt}<br>
+        <span class='warner'>🌺 {team_w}:</span> <b>{pw_names}</b> &nbsp;vs&nbsp;
+        <span class='kent'>🌿 {team_k}:</span> <b>{pk_names}</b>
         </div>""", unsafe_allow_html=True)
 
         # Ensure score lists
@@ -462,78 +512,63 @@ with tab_scores:
         while len(saved_w) < 18: saved_w.append(0)
         while len(saved_k) < 18: saved_k.append(0)
 
-        # ── Score entry: mobile-first with inline team labels ──
-        # Layout per hole: [Hole#] [🩷 badge + Warner input] [🟢 badge + Kent input]
-        # On desktop: side by side. On mobile: stacked but each input keeps its badge.
+        # ── STICKY LIVE STATUS (st.empty so it updates as scores change) ──
+        live_slot = st.empty()
+
+        def render_live(scores_w, scores_k):
+            _, _, hr, st_str = calculate_match_play(scores_w, scores_k, fmt)
+            played = [r for r in hr if r is not None]
+            syms = hole_symbols(hr)
+            status_text = st_str if played else "Not started"
+            live_slot.markdown(f"""
+            <div class='live-bar'>
+                <span style='font-weight:700;color:#2e7d32'>⛳ Live:</span>
+                <span style='font-weight:700;margin-left:0.3rem'>{status_text}</span>
+                <span style='margin-left:0.5rem;font-size:0.9rem'>{syms}</span>
+            </div>""", unsafe_allow_html=True)
+
+        # Show saved state immediately
+        render_live(saved_w, saved_k)
+
+        # ── SCORE GRID ──
+        # Column header
+        hc, wc, kc = st.columns([1, 5, 5])
+        hc.markdown("<div style='font-weight:700;font-size:0.8rem;text-align:center'>#</div>",
+                    unsafe_allow_html=True)
+        wc.markdown(f"<div class='score-hdr-w'>🌺 {team_w}<br><small>{pw_names}</small></div>",
+                    unsafe_allow_html=True)
+        kc.markdown(f"<div class='score-hdr-k'>🌿 {team_k}<br><small>{pk_names}</small></div>",
+                    unsafe_allow_html=True)
+
         new_scores_w = []
         new_scores_k = []
 
-        # Sticky header row
-        h_col, w_col, k_col = st.columns([1,4,4])
-        h_col.markdown("<div style='font-weight:700;font-size:0.85rem'>#</div>",
-                       unsafe_allow_html=True)
-        w_col.markdown(
-            f"<div style='background:#fff0f3;border:2px solid #FF6B7A;border-radius:8px;"
-            f"padding:0.25rem 0.5rem;font-size:0.8rem;font-weight:700;color:#FF6B7A'>"
-            f"🩷 {team_w} — {pw_names}</div>",
-            unsafe_allow_html=True)
-        k_col.markdown(
-            f"<div style='background:#f0f8f6;border:2px solid #1a7a6e;border-radius:8px;"
-            f"padding:0.25rem 0.5rem;font-size:0.8rem;font-weight:700;color:#1a7a6e'>"
-            f"🟢 {team_k} — {pk_names}</div>",
-            unsafe_allow_html=True)
-
         for h in range(18):
-            h_col, w_col, k_col = st.columns([1,4,4])
+            hc, wc, kc = st.columns([1, 5, 5])
             # Hole number
-            h_col.markdown(
-                f"<div style='padding-top:0.3rem;font-weight:700;font-size:0.9rem;"
-                f"text-align:center'>{h+1}</div>",
+            hc.markdown(
+                f"<div style='text-align:center;font-weight:700;font-size:0.9rem;"
+                f"padding-top:0.3rem'>{h+1}</div>",
                 unsafe_allow_html=True)
-            # Warner input with pink label prefix inside column
-            with w_col:
-                wcols = st.columns([1, 5])
-                wcols[0].markdown(
-                    f"<div style='background:#FF6B7A;color:white;border-radius:6px;"
-                    f"text-align:center;font-size:0.75rem;font-weight:700;"
-                    f"padding:0.35rem 0.1rem;margin-top:0.05rem'>🩷</div>",
-                    unsafe_allow_html=True)
-                sw = wcols[1].number_input("w", min_value=0, max_value=20, step=1,
-                    value=int(saved_w[h]), key=f"sw_{selected_key}_{h}",
-                    label_visibility="collapsed")
-            # Kent input with green label prefix inside column
-            with k_col:
-                kcols = st.columns([1, 5])
-                kcols[0].markdown(
-                    f"<div style='background:#1a7a6e;color:white;border-radius:6px;"
-                    f"text-align:center;font-size:0.75rem;font-weight:700;"
-                    f"padding:0.35rem 0.1rem;margin-top:0.05rem'>🟢</div>",
-                    unsafe_allow_html=True)
-                sk = kcols[1].number_input("k", min_value=0, max_value=20, step=1,
-                    value=int(saved_k[h]), key=f"sk_{selected_key}_{h}",
-                    label_visibility="collapsed")
+            # Warner score – pill label uses number_input's own label, visible on mobile
+            sw = wc.number_input(
+                f"🌺 W{h+1}",
+                min_value=0, max_value=20, step=1,
+                value=int(saved_w[h]),
+                key=f"sw_{selected_key}_{h}",
+                label_visibility="collapsed")
+            # Kent score
+            sk = kc.number_input(
+                f"🌿 K{h+1}",
+                min_value=0, max_value=20, step=1,
+                value=int(saved_k[h]),
+                key=f"sk_{selected_key}_{h}",
+                label_visibility="collapsed")
             new_scores_w.append(sw)
             new_scores_k.append(sk)
 
-        # Live status
-        _, _, hole_results, status_prev = calculate_match_play(new_scores_w, new_scores_k, fmt)
-        played = [r for r in hole_results if r is not None]
-        if played:
-            st.markdown(f"**Live:** {status_prev}")
-            result_row = []
-            for r in hole_results:
-                if r == "W":   result_row.append("🩷")
-                elif r == "K": result_row.append("🟢")
-                elif r == "H": result_row.append("⚪")
-                else:          result_row.append("·")
-            cols = st.columns(9)
-            for i,(c,sym) in enumerate(zip(cols, result_row[:9])):
-                c.markdown(f"<div style='text-align:center;font-size:0.9rem'>{sym}<br><small>{i+1}</small></div>",
-                           unsafe_allow_html=True)
-            cols2 = st.columns(9)
-            for i,(c,sym) in enumerate(zip(cols2, result_row[9:18])):
-                c.markdown(f"<div style='text-align:center;font-size:0.9rem'>{sym}<br><small>{i+10}</small></div>",
-                           unsafe_allow_html=True)
+        # Update live bar with current inputs
+        render_live(new_scores_w, new_scores_k)
 
         st.divider()
         if st.button("💾 Save & Calculate Match", use_container_width=True, key=f"save_{selected_key}"):
@@ -560,14 +595,13 @@ with tab_lb:
     total_available = 10.0
     needed = total_available / 2 + 0.5
 
-    # Hardcode colours in inline style — no CSS class indirection
     col_w, col_vs, col_k = st.columns([5,2,5])
     with col_w:
         st.markdown(f"""
         <div style='background:#FF6B7A;color:white;border-radius:12px;
                     padding:0.9rem 0.5rem;text-align:center;
                     font-size:1.3rem;font-weight:bold;'>
-            🩷 {team_w}<br>{total_w:.1f}
+            🌺 {team_w}<br>{total_w:.1f}
         </div>""", unsafe_allow_html=True)
     with col_vs:
         st.markdown("<div class='vs-text'>vs</div>", unsafe_allow_html=True)
@@ -576,7 +610,7 @@ with tab_lb:
         <div style='background:#1a7a6e;color:white;border-radius:12px;
                     padding:0.9rem 0.5rem;text-align:center;
                     font-size:1.3rem;font-weight:bold;'>
-            🟢 {team_k}<br>{total_k:.1f}
+            🌿 {team_k}<br>{total_k:.1f}
         </div>""", unsafe_allow_html=True)
 
     st.markdown(f"**{needed:.1f} pts to win · {total_available-total_w-total_k:.1f} pts still to play**")
@@ -603,7 +637,7 @@ with tab_lb:
         pts_k  = float(m.get("pts_k",0))
         pw_str = " & ".join(m.get("players_w",[]))
         pk_str = " & ".join(m.get("players_k",[]))
-        icon   = "🩷" if pts_w > pts_k else ("🟢" if pts_k > pts_w else ("⚪" if pts_w==0.5 else "⏳"))
+        icon   = "🌺" if pts_w > pts_k else ("🌿" if pts_k > pts_w else ("⚪" if pts_w==0.5 else "⏳"))
         _, _, _, status = calculate_match_play(
             m.get("scores_w",[0]*18), m.get("scores_k",[0]*18), m.get("format",""))
         st.markdown(f"{icon} **{key}**: {pw_str} vs {pk_str} · *{status}* · **{pts_w:.1f}–{pts_k:.1f}**")
@@ -620,9 +654,9 @@ with tab_pp:
         rows = []
         for player, pts in pp.items():
             if player in w_list:
-                rows.append({"":"🩷","Player":player,"Team":team_w,"Points":float(pts)})
+                rows.append({"":"🌺","Player":player,"Team":team_w,"Points":float(pts)})
             elif player in k_list:
-                rows.append({"":"🟢","Player":player,"Team":team_k,"Points":float(pts)})
+                rows.append({"":"🌿","Player":player,"Team":team_k,"Points":float(pts)})
             else:
                 rows.append({"":"⚪","Player":player,"Team":"Unknown","Points":float(pts)})
         df = pd.DataFrame(rows).sort_values("Points",ascending=False).reset_index(drop=True)
