@@ -409,7 +409,7 @@ with tab_setup:
         round_labels_fmt = {"R1":"Round 1 – Foursomes","R2":"Round 2 – Fourball",
                             "R3":"Round 3 – Greensomes","R4":"Round 4 – Singles"}
         cur_round = None
-        for mkey in sorted(st.session_state.matches.keys()):
+        for mkey in sorted(st.session_state.matches.keys(), key=lambda k: (int(k.split('-')[0][1:]) if k.split('-')[0][1:].isdigit() else 99, int(k.split('-M')[1]) if '-M' in k and k.split('-M')[1].isdigit() else 99)):
             mm = st.session_state.matches[mkey]
             rnd = mkey.split("-")[0]
             if rnd != cur_round:
@@ -500,7 +500,7 @@ with tab_players:
             "R3":"Round 3 – Greensomes","R4":"Round 4 – Singles"
         }
         current_round = None
-        for key in sorted(st.session_state.matches.keys()):
+        for key in sorted(st.session_state.matches.keys(), key=lambda k: (int(k.split('-')[0][1:]) if k.split('-')[0][1:].isdigit() else 99, int(k.split('-M')[1]) if '-M' in k and k.split('-M')[1].isdigit() else 99)):
             m   = st.session_state.matches[key]
             fmt = m["format"]
             rnd = key.split("-")[0]
@@ -555,7 +555,7 @@ with tab_players:
 # ══════════════════════════════════════════════
 with tab_scores:
     st.subheader("🏌️ Enter Scores")
-    match_keys = list(st.session_state.matches.keys())
+        match_keys = sorted(st.session_state.matches.keys(), key=lambda k: (int(k.split('-')[0][1:]) if k.split('-')[0][1:].isdigit() else 99, int(k.split('-M')[1]) if '-M' in k and k.split('-M')[1].isdigit() else 99))
 
     if not match_keys:
         st.info("No matches yet – go to ⚙️ Setup and create matches first.")
@@ -720,7 +720,7 @@ with tab_pp:
     round_labels = {"R1":"Round 1 – Foursomes","R2":"Round 2 – Fourball",
                     "R3":"Round 3 – Greensomes","R4":"Round 4 – Singles"}
     current_round = None
-    for key in sorted(st.session_state.matches.keys()):
+    for key in sorted(st.session_state.matches.keys(), key=lambda k: (int(k.split('-')[0][1:]) if k.split('-')[0][1:].isdigit() else 99, int(k.split('-M')[1]) if '-M' in k and k.split('-M')[1].isdigit() else 99)):
         m   = st.session_state.matches[key]
         rnd = key.split("-")[0]
         if rnd != current_round:
