@@ -102,20 +102,27 @@ st.markdown("""
         height: 1.9rem !important;
     }
 
-    /* ══ SCORE INPUT COLOURS – by key ══ */
-    /* Warner inputs (keys start with sw_) → pink border + tint */
-    [data-testid*="sw_"] input {
-        border: 2.5px solid #FF6B7A !important;
-        background-color: #fff5f6 !important;
-        border-radius: 8px !important;
-        color: #1a1a1a !important;
+    /* ══ SCORE INPUT LABELS – coloured via Streamlit native label ══ */
+    /* Style the visible number input labels Warner=pink, Kent=green */
+    .score-label-w {
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: #FF6B7A;
+        background: #fff0f3;
+        border-radius: 20px;
+        padding: 0.1rem 0.5rem;
+        display: inline-block;
+        margin-bottom: 0.1rem;
     }
-    /* Kent inputs (keys start with sk_) → green border + tint */
-    [data-testid*="sk_"] input {
-        border: 2.5px solid #1a7a6e !important;
-        background-color: #f0f8f6 !important;
-        border-radius: 8px !important;
-        color: #1a1a1a !important;
+    .score-label-k {
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: #1a7a6e;
+        background: #eef7f5;
+        border-radius: 20px;
+        padding: 0.1rem 0.5rem;
+        display: inline-block;
+        margin-bottom: 0.1rem;
     }
 
     /* ══ MATCH CARD ══ */
@@ -543,27 +550,42 @@ with tab_scores:
         new_scores_w = []
         new_scores_k = []
 
+        # Show reminder labels at hole 1, 7, 13 only — keeps scroll short
+        LABEL_HOLES = {0, 6, 12}
+
         for h in range(18):
+            show_label = h in LABEL_HOLES
             hc, wc, kc = st.columns([1, 5, 5])
-            # Hole number
+
+            # Hole number — pad top only when no label above
+            top_pad = "1.6rem" if not show_label else "0.2rem"
             hc.markdown(
                 f"<div style='text-align:center;font-weight:700;font-size:0.9rem;"
-                f"padding-top:0.3rem'>{h+1}</div>",
+                f"padding-top:{top_pad}'>{h+1}</div>",
                 unsafe_allow_html=True)
-            # Warner score – pill label uses number_input's own label, visible on mobile
-            sw = wc.number_input(
-                f"🌺 W{h+1}",
-                min_value=0, max_value=20, step=1,
-                value=int(saved_w[h]),
-                key=f"sw_{selected_key}_{h}",
-                label_visibility="collapsed")
-            # Kent score
-            sk = kc.number_input(
-                f"🌿 K{h+1}",
-                min_value=0, max_value=20, step=1,
-                value=int(saved_k[h]),
-                key=f"sk_{selected_key}_{h}",
-                label_visibility="collapsed")
+
+            with wc:
+                if show_label:
+                    st.markdown(
+                        f"<div class='score-label-w'>🌺 {team_w}</div>",
+                        unsafe_allow_html=True)
+                sw = st.number_input(
+                    "w", min_value=0, max_value=20, step=1,
+                    value=int(saved_w[h]),
+                    key=f"sw_{selected_key}_{h}",
+                    label_visibility="collapsed")
+
+            with kc:
+                if show_label:
+                    st.markdown(
+                        f"<div class='score-label-k'>🌿 {team_k}</div>",
+                        unsafe_allow_html=True)
+                sk = st.number_input(
+                    "k", min_value=0, max_value=20, step=1,
+                    value=int(saved_k[h]),
+                    key=f"sk_{selected_key}_{h}",
+                    label_visibility="collapsed")
+
             new_scores_w.append(sw)
             new_scores_k.append(sk)
 
