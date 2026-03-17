@@ -33,26 +33,47 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-    /* ── Force light mode regardless of device setting ── */
-    html, body, [data-testid="stAppViewContainer"], [data-testid="stApp"] {
+    /* ── Force light mode – covers web + iOS Safari dark mode ── */
+    html, body,
+    [data-testid="stAppViewContainer"],
+    [data-testid="stApp"],
+    [data-testid="stMain"],
+    [data-testid="block-container"] {
         background-color: #f5f7f5 !important;
         color: #1a1a1a !important;
     }
-    [data-testid="stSidebar"] { background-color: #ffffff !important; }
+    [data-testid="stSidebar"],
+    [data-testid="stSidebarContent"] {
+        background-color: #ffffff !important;
+        color: #1a1a1a !important;
+    }
+    /* Override dark-mode media query on ALL devices */
     @media (prefers-color-scheme: dark) {
-        html, body, [data-testid="stAppViewContainer"], [data-testid="stApp"] {
+        html, body,
+        [data-testid="stAppViewContainer"],
+        [data-testid="stApp"],
+        [data-testid="stMain"],
+        [data-testid="block-container"] {
             background-color: #f5f7f5 !important;
             color: #1a1a1a !important;
         }
-        [data-testid="stSidebar"] { background-color: #ffffff !important; }
-        .stMarkdown, .stText, p, h1, h2, h3, h4, h5, h6, label {
-            color: #1a1a1a !important;
-        }
-        .stSelectbox > div, .stTextInput > div > div {
+        [data-testid="stSidebar"],
+        [data-testid="stSidebarContent"] {
             background-color: #ffffff !important;
             color: #1a1a1a !important;
         }
-        .stNumberInput input {
+        p, h1, h2, h3, h4, h5, h6, span, label, div {
+            color: #1a1a1a !important;
+        }
+        .stSelectbox > div,
+        .stTextInput > div > div,
+        .stNumberInput > div > div {
+            background-color: #ffffff !important;
+            color: #1a1a1a !important;
+        }
+        .stNumberInput input,
+        .stTextInput input,
+        .stSelectbox select {
             background-color: #ffffff !important;
             color: #1a1a1a !important;
         }
@@ -99,6 +120,21 @@ st.markdown("""
 
     /* ── VS text ── */
     .vs-text { text-align:center; font-size:1.1rem; color:#555; padding-top:1.2rem; }
+
+    /* ── Colored score inputs via key-based selectors ── */
+    /* Streamlit gives each widget a data-testid containing its key */
+    [data-testid*="sw_"] input {
+        border: 2px solid #FF6B7A !important;
+        border-radius: 8px !important;
+        background-color: #fff5f6 !important;
+        color: #1a1a1a !important;
+    }
+    [data-testid*="sk_"] input {
+        border: 2px solid #1a7a6e !important;
+        border-radius: 8px !important;
+        background-color: #f0f8f6 !important;
+        color: #1a1a1a !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -426,28 +462,56 @@ with tab_scores:
         while len(saved_w) < 18: saved_w.append(0)
         while len(saved_k) < 18: saved_k.append(0)
 
-        # Column header
-        h_col, w_col, k_col = st.columns([1,4,4])
-        h_col.markdown("**#**")
-        w_col.markdown(f"<span class='warner'>🩷 {team_w}<br><small>{pw_names}</small></span>",
-                       unsafe_allow_html=True)
-        k_col.markdown(f"<span class='kent'>🟢 {team_k}<br><small>{pk_names}</small></span>",
-                       unsafe_allow_html=True)
-
+        # ── Score entry: mobile-first with inline team labels ──
+        # Layout per hole: [Hole#] [🩷 badge + Warner input] [🟢 badge + Kent input]
+        # On desktop: side by side. On mobile: stacked but each input keeps its badge.
         new_scores_w = []
         new_scores_k = []
 
+        # Sticky header row
+        h_col, w_col, k_col = st.columns([1,4,4])
+        h_col.markdown("<div style='font-weight:700;font-size:0.85rem'>#</div>",
+                       unsafe_allow_html=True)
+        w_col.markdown(
+            f"<div style='background:#fff0f3;border:2px solid #FF6B7A;border-radius:8px;"
+            f"padding:0.25rem 0.5rem;font-size:0.8rem;font-weight:700;color:#FF6B7A'>"
+            f"🩷 {team_w} — {pw_names}</div>",
+            unsafe_allow_html=True)
+        k_col.markdown(
+            f"<div style='background:#f0f8f6;border:2px solid #1a7a6e;border-radius:8px;"
+            f"padding:0.25rem 0.5rem;font-size:0.8rem;font-weight:700;color:#1a7a6e'>"
+            f"🟢 {team_k} — {pk_names}</div>",
+            unsafe_allow_html=True)
+
         for h in range(18):
             h_col, w_col, k_col = st.columns([1,4,4])
+            # Hole number
             h_col.markdown(
-                f"<div style='padding-top:0.2rem;font-weight:700;font-size:0.85rem'>{h+1}</div>",
+                f"<div style='padding-top:0.3rem;font-weight:700;font-size:0.9rem;"
+                f"text-align:center'>{h+1}</div>",
                 unsafe_allow_html=True)
-            sw = w_col.number_input("w", min_value=0, max_value=20, step=1,
-                value=int(saved_w[h]), key=f"sw_{selected_key}_{h}",
-                label_visibility="collapsed")
-            sk = k_col.number_input("k", min_value=0, max_value=20, step=1,
-                value=int(saved_k[h]), key=f"sk_{selected_key}_{h}",
-                label_visibility="collapsed")
+            # Warner input with pink label prefix inside column
+            with w_col:
+                wcols = st.columns([1, 5])
+                wcols[0].markdown(
+                    f"<div style='background:#FF6B7A;color:white;border-radius:6px;"
+                    f"text-align:center;font-size:0.75rem;font-weight:700;"
+                    f"padding:0.35rem 0.1rem;margin-top:0.05rem'>🩷</div>",
+                    unsafe_allow_html=True)
+                sw = wcols[1].number_input("w", min_value=0, max_value=20, step=1,
+                    value=int(saved_w[h]), key=f"sw_{selected_key}_{h}",
+                    label_visibility="collapsed")
+            # Kent input with green label prefix inside column
+            with k_col:
+                kcols = st.columns([1, 5])
+                kcols[0].markdown(
+                    f"<div style='background:#1a7a6e;color:white;border-radius:6px;"
+                    f"text-align:center;font-size:0.75rem;font-weight:700;"
+                    f"padding:0.35rem 0.1rem;margin-top:0.05rem'>🟢</div>",
+                    unsafe_allow_html=True)
+                sk = kcols[1].number_input("k", min_value=0, max_value=20, step=1,
+                    value=int(saved_k[h]), key=f"sk_{selected_key}_{h}",
+                    label_visibility="collapsed")
             new_scores_w.append(sw)
             new_scores_k.append(sk)
 
