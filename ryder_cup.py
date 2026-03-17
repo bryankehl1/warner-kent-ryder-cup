@@ -32,14 +32,23 @@ st.set_page_config(
 # GREEN = Kent   = #1a7a6e
 
 st.markdown("""
+<meta name="color-scheme" content="light only">
 <style>
-    /* ══ FORCE LIGHT MODE ══ */
+    /* ══ FORCE LIGHT MODE – iOS Safari nuclear option ══ */
+    /* Step 1: tell the browser this page is light-only */
+    :root { color-scheme: light only !important; }
+
+    /* Step 2: override every element unconditionally */
+    *, *::before, *::after {
+        color-scheme: light only !important;
+    }
     html, body,
     [data-testid="stAppViewContainer"],
     [data-testid="stApp"],
     [data-testid="stMain"],
     [data-testid="block-container"],
-    [data-testid="stVerticalBlock"] {
+    [data-testid="stVerticalBlock"],
+    [data-testid="stHeader"] {
         background-color: #f5f7f5 !important;
         color: #1a1a1a !important;
     }
@@ -48,13 +57,17 @@ st.markdown("""
         background-color: #ffffff !important;
         color: #1a1a1a !important;
     }
+    /* Step 3: keep overrides inside the dark media query too,
+       so no rule can slip through */
     @media (prefers-color-scheme: dark) {
+        :root { color-scheme: light only !important; }
         html, body,
         [data-testid="stAppViewContainer"],
         [data-testid="stApp"],
         [data-testid="stMain"],
         [data-testid="block-container"],
-        [data-testid="stVerticalBlock"] {
+        [data-testid="stVerticalBlock"],
+        [data-testid="stHeader"] {
             background-color: #f5f7f5 !important;
             color: #1a1a1a !important;
         }
@@ -63,15 +76,23 @@ st.markdown("""
             background-color: #ffffff !important;
             color: #1a1a1a !important;
         }
-        p, h1, h2, h3, h4, h5, h6, span, label {
+        p, h1, h2, h3, h4, h5, h6, span, label, div, a {
             color: #1a1a1a !important;
         }
-        .stNumberInput input, .stTextInput input {
+        .stNumberInput input, .stTextInput input,
+        textarea, select {
+            background-color: #ffffff !important;
+            color: #1a1a1a !important;
+            border-color: #cccccc !important;
+        }
+        .stSelectbox > div > div,
+        [data-baseweb="select"] > div {
             background-color: #ffffff !important;
             color: #1a1a1a !important;
         }
-        .stSelectbox > div > div {
-            background-color: #ffffff !important;
+        [data-baseweb="tab-list"],
+        [data-baseweb="tab"] {
+            background-color: #f5f7f5 !important;
             color: #1a1a1a !important;
         }
     }
@@ -371,21 +392,34 @@ with tab_setup:
     st.divider()
 
     schedule = [
-        ("R1-M1","Foursomes", [w_list[0],w_list[1]], [k_list[0],k_list[1]]),
-        ("R1-M2","Foursomes", [w_list[2],w_list[3]], [k_list[2],k_list[3]]),
-        ("R2-M1","Fourball",  [w_list[0],w_list[1]], [k_list[0],k_list[1]]),
-        ("R2-M2","Fourball",  [w_list[2],w_list[3]], [k_list[2],k_list[3]]),
-        ("R3-M1","Greensomes",[w_list[0],w_list[1]], [k_list[0],k_list[1]]),
-        ("R3-M2","Greensomes",[w_list[2],w_list[3]], [k_list[2],k_list[3]]),
-        ("R4-M1","Singles",   [w_list[0]],           [k_list[0]]),
-        ("R4-M2","Singles",   [w_list[1]],           [k_list[1]]),
-        ("R4-M3","Singles",   [w_list[2]],           [k_list[2]]),
-        ("R4-M4","Singles",   [w_list[3]],           [k_list[3]]),
+        ("R1-M1", "Foursomes", [w_list[0],w_list[1]], [k_list[0],k_list[1]]),
+        ("R1-M2", "Foursomes", [w_list[2],w_list[3]], [k_list[2],k_list[3]]),
+        ("R2-M3", "Fourball",  [w_list[0],w_list[1]], [k_list[0],k_list[1]]),
+        ("R2-M4", "Fourball",  [w_list[2],w_list[3]], [k_list[2],k_list[3]]),
+        ("R3-M5", "Greensomes",[w_list[0],w_list[1]], [k_list[0],k_list[1]]),
+        ("R3-M6", "Greensomes",[w_list[2],w_list[3]], [k_list[2],k_list[3]]),
+        ("R4-M7", "Singles",   [w_list[0]],           [k_list[0]]),
+        ("R4-M8", "Singles",   [w_list[1]],           [k_list[1]]),
+        ("R4-M9", "Singles",   [w_list[2]],           [k_list[2]]),
+        ("R4-M10","Singles",   [w_list[3]],           [k_list[3]]),
     ]
 
-    st.markdown("**Proposed Pairings:**")
-    for key, fmt, pw, pk in schedule:
-        st.markdown(f"- **{key}** ({fmt}): {' & '.join(pw)} vs {' & '.join(pk)}")
+    st.markdown("**Current Pairings:**")
+    if st.session_state.matches:
+        round_labels_fmt = {"R1":"Round 1 – Foursomes","R2":"Round 2 – Fourball",
+                            "R3":"Round 3 – Greensomes","R4":"Round 4 – Singles"}
+        cur_round = None
+        for mkey in sorted(st.session_state.matches.keys()):
+            mm = st.session_state.matches[mkey]
+            rnd = mkey.split("-")[0]
+            if rnd != cur_round:
+                cur_round = rnd
+                st.markdown(f"*{round_labels_fmt.get(rnd,rnd)}*")
+            pw_live = " & ".join(mm.get("players_w", [])) or "TBD"
+            pk_live = " & ".join(mm.get("players_k", [])) or "TBD"
+            st.markdown(f"- **{mkey}**: {pw_live} vs {pk_live}")
+    else:
+        st.info("No matches created yet — pairings will appear here after you create matches in Setup.")
     st.divider()
 
     col1, col2 = st.columns(2)
@@ -648,15 +682,30 @@ with tab_scores:
 # ══════════════════════════════════════════════
 with tab_pp:
     st.subheader("🏆 Individual Player Points")
-    pp = st.session_state.player_points
-    if not pp:
+
+    # Rebuild points live from matches + current player lists
+    # This ensures name changes in the Players tab are always reflected
+    live_pp = {}
+    all_w = set(w_list)
+    all_k = set(k_list)
+    for mm in st.session_state.matches.values():
+        for p in mm.get("players_w", []):
+            live_pp[p] = live_pp.get(p, 0.0) + float(mm.get("pts_w", 0))
+        for p in mm.get("players_k", []):
+            live_pp[p] = live_pp.get(p, 0.0) + float(mm.get("pts_k", 0))
+    # Also ensure every current player appears (even with 0 pts)
+    for p in list(all_w) + list(all_k):
+        if p not in live_pp:
+            live_pp[p] = 0.0
+
+    if not live_pp:
         st.info("No player points yet – save some match scores first.")
     else:
         rows = []
-        for player, pts in pp.items():
-            if player in w_list:
+        for player, pts in live_pp.items():
+            if player in all_w:
                 rows.append({"":"🌺","Player":player,"Team":team_w,"Points":float(pts)})
-            elif player in k_list:
+            elif player in all_k:
                 rows.append({"":"🌿","Player":player,"Team":team_k,"Points":float(pts)})
             else:
                 rows.append({"":"⚪","Player":player,"Team":"Unknown","Points":float(pts)})
