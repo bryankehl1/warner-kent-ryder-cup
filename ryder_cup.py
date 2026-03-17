@@ -555,7 +555,7 @@ with tab_players:
 # ══════════════════════════════════════════════
 with tab_scores:
     st.subheader("🏌️ Enter Scores")
-        match_keys = sorted(st.session_state.matches.keys(), key=lambda k: (int(k.split('-')[0][1:]) if k.split('-')[0][1:].isdigit() else 99, int(k.split('-M')[1]) if '-M' in k and k.split('-M')[1].isdigit() else 99))
+    match_keys = sorted(st.session_state.matches.keys(), key=lambda k: (int(k.split('-')[0][1:]) if k.split('-')[0][1:].isdigit() else 99, int(k.split('-M')[1]) if '-M' in k and k.split('-M')[1].isdigit() else 99))
 
     if not match_keys:
         st.info("No matches yet – go to ⚙️ Setup and create matches first.")
