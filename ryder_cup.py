@@ -271,10 +271,9 @@ COURSE_PARS = {
 }
 
 def to_par_str(scores, round_key):
-    """Return +N / E / -N string for strokes vs par through holes played."""
     pars = COURSE_PARS.get(round_key)
     if not pars:
-        return ""
+        return "E"
     total_strokes = sum(s for i,s in enumerate(scores) if s and s > 0 and i < len(pars))
     total_par     = sum(pars[i] for i,s in enumerate(scores) if s and s > 0 and i < len(pars))
     if total_strokes == 0:
@@ -548,7 +547,7 @@ with tab_scores:
 
         pw_names  = " & ".join(m.get("players_w",[])) or team_w
         pk_names  = " & ".join(m.get("players_k",[])) or team_k
-        round_key = selected_key.split("-")[0]  # R1, R2, or R3
+        round_key = selected_key.split("-")[0]
 
         # Match info card
         st.markdown(f"""
@@ -616,25 +615,27 @@ with tab_scores:
         new_scores_w = []
         new_scores_k = []
 
-        LABEL_HOLES = {0, 3, 6, 9, 12, 15}
+        LABEL_HOLES = set(range(18))
 
         for h in range(18):
             show_label = h in LABEL_HOLES
             hc, wc, kc = st.columns([1, 5, 5])
 
-            top_pad = "0.2rem" if show_label else "1.6rem"
             hc.markdown(
                 f"<div style='text-align:center;font-weight:700;font-size:0.9rem;"
-                f"padding-top:{top_pad}'>{h+1}</div>",
+                f"padding-top:0.2rem'>{h+1}</div>",
                 unsafe_allow_html=True)
 
             with wc:
                 if show_label:
                     tally_so_far_w = score_tally(new_scores_w)
-                    status_label   = match_status_label(new_scores_w, new_scores_k)
-                    status_part    = f" · {status_label}" if status_label else ""
+                    _sw = new_scores_w if new_scores_w else saved_w
+                    _sk = new_scores_k if new_scores_k else saved_k
+                    status_label = match_status_label(_sw, _sk)
+                    status_part  = f" · {status_label}" if status_label else ""
+                    par_str_w    = to_par_str(_sw, round_key)
                     st.markdown(
-                        f"<div class='score-label-w'>🌺 {pw_names}{status_part} · {tally_so_far_w}</div>",
+                        f"<div class='score-label-w'>🌺 {pw_names}{status_part} · {tally_so_far_w} ({par_str_w})</div>",
                         unsafe_allow_html=True)
                 sw = st.number_input("w", min_value=0, max_value=20, step=1,
                     value=int(saved_w[h]), key=f"sw_{selected_key}_{h}",
@@ -643,16 +644,18 @@ with tab_scores:
             with kc:
                 if show_label:
                     tally_so_far_k = score_tally(new_scores_k)
-                    # Kent status is the mirror of Warner's
-                    w_status = match_status_label(new_scores_w, new_scores_k)
-                    if w_status == "AS" or w_status == "":
-                        k_status_part = f" · {w_status}" if w_status else ""
+                    _sw = new_scores_w if new_scores_w else saved_w
+                    _sk = new_scores_k if new_scores_k else saved_k
+                    w_status = match_status_label(_sw, _sk)
+                    if w_status == "AS":
+                        k_status_part = " · AS"
                     elif "UP" in w_status:
                         k_status_part = f" · {w_status.replace('UP','DN')}"
                     else:
                         k_status_part = f" · {w_status.replace('DN','UP')}"
+                    par_str_k = to_par_str(_sk, round_key)
                     st.markdown(
-                        f"<div class='score-label-k'>🌿 {pk_names}{k_status_part} · {tally_so_far_k}</div>",
+                        f"<div class='score-label-k'>🌿 {pk_names}{k_status_part} · {tally_so_far_k} ({par_str_k})</div>",
                         unsafe_allow_html=True)
                 sk = st.number_input("k", min_value=0, max_value=20, step=1,
                     value=int(saved_k[h]), key=f"sk_{selected_key}_{h}",
@@ -734,12 +737,7 @@ with tab_pp:
         tally_k = score_tally(sk_saved)
         _, _, _, status = calculate_match_play(sw_saved, sk_saved, m.get("format",""))
         # Show score tallies alongside result
-        rk = key.split("-")[0]
-        par_w_res = to_par_str(sw_saved, rk)
-        par_k_res = to_par_str(sk_saved, rk)
-        w_score_str = f"**{tally_w}** ({par_w_res})" if tally_w else "–"
-        k_score_str = f"**{tally_k}** ({par_k_res})" if tally_k else "–"
-        tally_str = f" · {pw_str} {w_score_str} – {pk_str} {k_score_str}" if (tally_w or tally_k) else ""
+        tally_str = f" · Scores: {pw_str} **{tally_w}** – {pk_str} **{tally_k}**" if (tally_w or tally_k) else ""
         st.markdown(f"{icon} **{key}**: {pw_str} vs {pk_str} · *{status}* · **{pts_w:.1f}–{pts_k:.1f}**{tally_str}")
 
 st.divider()
