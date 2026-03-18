@@ -255,7 +255,7 @@ def match_status_label(scores_w, scores_k):
         if sw < sk:   w_up += 1
         elif sk < sw: w_up -= 1
     if holes_played == 0:
-        return ""
+        return "AS"
     if w_up == 0:
         return "AS"
     elif w_up > 0:
@@ -607,8 +607,11 @@ with tab_scores:
             with wc:
                 if show_label:
                     tally_so_far_w = score_tally(new_scores_w)
-                    status_label   = match_status_label(new_scores_w, new_scores_k)
-                    status_part    = f" · {status_label}" if status_label else ""
+                    # Use scores entered so far; fall back to saved if none yet
+                    _sw = new_scores_w if new_scores_w else saved_w
+                    _sk = new_scores_k if new_scores_k else saved_k
+                    status_label = match_status_label(_sw, _sk)
+                    status_part  = f" · {status_label}" if status_label else ""
                     st.markdown(
                         f"<div class='score-label-w'>🌺 {pw_names}{status_part} · {tally_so_far_w}</div>",
                         unsafe_allow_html=True)
@@ -619,10 +622,11 @@ with tab_scores:
             with kc:
                 if show_label:
                     tally_so_far_k = score_tally(new_scores_k)
-                    # Kent status is the mirror of Warner's
-                    w_status = match_status_label(new_scores_w, new_scores_k)
-                    if w_status == "AS" or w_status == "":
-                        k_status_part = f" · {w_status}" if w_status else ""
+                    _sw = new_scores_w if new_scores_w else saved_w
+                    _sk = new_scores_k if new_scores_k else saved_k
+                    w_status = match_status_label(_sw, _sk)
+                    if w_status == "AS":
+                        k_status_part = " · AS"
                     elif "UP" in w_status:
                         k_status_part = f" · {w_status.replace('UP','DN')}"
                     else:
