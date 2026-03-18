@@ -582,16 +582,6 @@ with tab_scores:
 
         render_live(saved_w, saved_k)
 
-        # ── TOP SAVE BUTTON ──
-        if st.button("💾 Save Scores/Update Leaderboard", use_container_width=True,
-                     key=f"save_top_{selected_key}"):
-            # collect current widget values from session state
-            top_w = [int(st.session_state.get(f"sw_{selected_key}_{h}", saved_w[h])) for h in range(18)]
-            top_k = [int(st.session_state.get(f"sk_{selected_key}_{h}", saved_k[h])) for h in range(18)]
-            pts_w, pts_k, status = do_save(selected_key, top_w, top_k, fmt)
-            st.success(f"✅ {status} · {team_w} {pts_w:.1f}pt – {team_k} {pts_k:.1f}pt")
-            st.rerun()
-
         # ── SCORE GRID HEADER with live tally ──
         tally_w = score_tally(saved_w)
         tally_k = score_tally(saved_k)
@@ -667,13 +657,10 @@ with tab_scores:
         # Update live bar
         render_live(new_scores_w, new_scores_k)
 
-        st.divider()
-        # ── BOTTOM SAVE BUTTON ──
-        if st.button("💾 Save Scores/Update Leaderboard", use_container_width=True,
-                     key=f"save_bot_{selected_key}"):
+        # ── AUTO-SAVE: write to Firebase whenever scores change ──
+        if new_scores_w != saved_w or new_scores_k != saved_k:
             pts_w, pts_k, status = do_save(selected_key, new_scores_w, new_scores_k, fmt)
-            st.success(f"✅ {status} · {team_w} {pts_w:.1f}pt – {team_k} {pts_k:.1f}pt")
-            st.rerun()
+            st.caption(f"✅ Auto-saved · {status}")
 
 # ══════════════════════════════════════════════
 # TAB 4 – POINTS
