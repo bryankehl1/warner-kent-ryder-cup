@@ -735,9 +735,13 @@ with tab_pp:
         if not isinstance(sk_saved, list): sk_saved = [0]*18
         tally_w = score_tally(sw_saved)
         tally_k = score_tally(sk_saved)
+        rk = key.split("-")[0]
+        par_w_res = to_par_str(sw_saved, rk)
+        par_k_res = to_par_str(sk_saved, rk)
         _, _, _, status = calculate_match_play(sw_saved, sk_saved, m.get("format",""))
-        # Show score tallies alongside result
-        tally_str = f" · Scores: {pw_str} **{tally_w}** – {pk_str} **{tally_k}**" if (tally_w or tally_k) else ""
+        w_score_str = f"**{tally_w}** ({par_w_res})" if tally_w else "–"
+        k_score_str = f"**{tally_k}** ({par_k_res})" if tally_k else "–"
+        tally_str = f" · {pw_str} {w_score_str} – {pk_str} {k_score_str}" if (tally_w or tally_k) else ""
         st.markdown(f"{icon} **{key}**: {pw_str} vs {pk_str} · *{status}* · **{pts_w:.1f}–{pts_k:.1f}**{tally_str}")
 
 st.divider()
