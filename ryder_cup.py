@@ -244,6 +244,25 @@ def score_tally(scores):
     """Sum of non-zero scores entered so far."""
     return sum(s for s in scores if s and s > 0)
 
+def match_status_label(scores_w, scores_k):
+    """Return compact match status: AS, 1 UP, 2 DN etc. from Warner perspective."""
+    w_up = 0
+    holes_played = 0
+    for sw, sk in zip(scores_w, scores_k):
+        if sw == 0 and sk == 0:
+            continue
+        holes_played += 1
+        if sw < sk:   w_up += 1
+        elif sk < sw: w_up -= 1
+    if holes_played == 0:
+        return ""
+    if w_up == 0:
+        return "AS"
+    elif w_up > 0:
+        return f"{w_up} UP"
+    else:
+        return f"{abs(w_up)} DN"
+
 def do_save(selected_key, new_scores_w, new_scores_k, fmt):
     pts_w, pts_k, _, status = calculate_match_play(new_scores_w, new_scores_k, fmt)
     st.session_state.matches[selected_key].update({
@@ -587,10 +606,11 @@ with tab_scores:
 
             with wc:
                 if show_label:
-                    # Label shows player names + running tally so far
                     tally_so_far_w = score_tally(new_scores_w)
+                    status_label   = match_status_label(new_scores_w, new_scores_k)
+                    status_part    = f" · {status_label}" if status_label else ""
                     st.markdown(
-                        f"<div class='score-label-w'>🌺 {pw_names} · {tally_so_far_w}</div>",
+                        f"<div class='score-label-w'>🌺 {pw_names}{status_part} · {tally_so_far_w}</div>",
                         unsafe_allow_html=True)
                 sw = st.number_input("w", min_value=0, max_value=20, step=1,
                     value=int(saved_w[h]), key=f"sw_{selected_key}_{h}",
@@ -599,8 +619,16 @@ with tab_scores:
             with kc:
                 if show_label:
                     tally_so_far_k = score_tally(new_scores_k)
+                    # Kent status is the mirror of Warner's
+                    w_status = match_status_label(new_scores_w, new_scores_k)
+                    if w_status == "AS" or w_status == "":
+                        k_status_part = f" · {w_status}" if w_status else ""
+                    elif "UP" in w_status:
+                        k_status_part = f" · {w_status.replace('UP','DN')}"
+                    else:
+                        k_status_part = f" · {w_status.replace('DN','UP')}"
                     st.markdown(
-                        f"<div class='score-label-k'>🌿 {pk_names} · {tally_so_far_k}</div>",
+                        f"<div class='score-label-k'>🌿 {pk_names}{k_status_part} · {tally_so_far_k}</div>",
                         unsafe_allow_html=True)
                 sk = st.number_input("k", min_value=0, max_value=20, step=1,
                     value=int(saved_k[h]), key=f"sk_{selected_key}_{h}",
