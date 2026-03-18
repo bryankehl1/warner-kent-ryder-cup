@@ -592,16 +592,15 @@ with tab_scores:
         new_scores_w = []
         new_scores_k = []
 
-        LABEL_HOLES = {0, 3, 6, 9, 12, 15}
+        LABEL_HOLES = set(range(18))
 
         for h in range(18):
             show_label = h in LABEL_HOLES
             hc, wc, kc = st.columns([1, 5, 5])
 
-            top_pad = "0.2rem" if show_label else "1.6rem"
             hc.markdown(
                 f"<div style='text-align:center;font-weight:700;font-size:0.9rem;"
-                f"padding-top:{top_pad}'>{h+1}</div>",
+                f"padding-top:0.2rem'>{h+1}</div>",
                 unsafe_allow_html=True)
 
             with wc:
