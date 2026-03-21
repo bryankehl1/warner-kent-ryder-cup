@@ -181,6 +181,15 @@ for _k in list(st.session_state.players.keys()):
     elif "kent" in _k.lower():
         st.session_state.kent_name = _k
 
+# ── One-time migration: rename Greensomes → Shamble in Firebase & session ──
+for _mk, _mv in list(st.session_state.matches.items()):
+    if _mv.get("format") == "Greensomes":
+        st.session_state.matches[_mk]["format"] = "Shamble"
+        try:
+            db.child("matches").child(_mk).update({"format": "Shamble"})
+        except:
+            pass
+
 # ── HELPERS ──
 MSORT = lambda k: (int(k.split('-')[0][1:]) if k.split('-')[0][1:].isdigit() else 99,
                    int(k.split('-M')[1])     if '-M' in k and k.split('-M')[1].isdigit() else 99)
