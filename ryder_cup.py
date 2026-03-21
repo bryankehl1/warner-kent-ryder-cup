@@ -358,12 +358,12 @@ with tab_setup:
 |-------|--------|---------|
 | R1 | Fourball (Best Ball) | 2 |
 | R2 | Singles Match Play | 4 |
-| R3 | Greensomes (Modified Alt. Shot) | 2 |
+| R3 | Shamble (Match Play) | 2 |
 """)
     st.markdown("**Total: 8 matches · 8 points available**")
     st.divider()
 
-    # New schedule: R1 Fourball (M1-M2), R2 Singles (M3-M6), R3 Greensomes (M7-M8)
+    # New schedule: R1 Fourball (M1-M2), R2 Singles (M3-M6), R3 Shamble (Match Play) (M7-M8)
     schedule = [
         ("R1-M1", "Fourball",   [w_list[0],w_list[1]], [k_list[0],k_list[1]]),
         ("R1-M2", "Fourball",   [w_list[2],w_list[3]], [k_list[2],k_list[3]]),
@@ -371,8 +371,8 @@ with tab_setup:
         ("R2-M4", "Singles",    [w_list[1]],           [k_list[1]]),
         ("R2-M5", "Singles",    [w_list[2]],           [k_list[2]]),
         ("R2-M6", "Singles",    [w_list[3]],           [k_list[3]]),
-        ("R3-M7", "Greensomes", [w_list[0],w_list[1]], [k_list[0],k_list[1]]),
-        ("R3-M8", "Greensomes", [w_list[2],w_list[3]], [k_list[2],k_list[3]]),
+        ("R3-M7", "Shamble", [w_list[0],w_list[1]], [k_list[0],k_list[1]]),
+        ("R3-M8", "Shamble", [w_list[2],w_list[3]], [k_list[2],k_list[3]]),
     ]
 
     st.markdown("**Current Pairings:**")
@@ -380,7 +380,7 @@ with tab_setup:
         round_labels_fmt = {
             "R1":"Round 1 – Fourball",
             "R2":"Round 2 – Singles",
-            "R3":"Round 3 – Greensomes"
+            "R3":"Round 3 – Shamble (Match Play)"
         }
         cur_round = None
         for mkey in sorted(st.session_state.matches.keys(), key=MSORT):
@@ -472,7 +472,7 @@ with tab_players:
         round_labels_p = {
             "R1":"Round 1 – Fourball",
             "R2":"Round 2 – Singles",
-            "R3":"Round 3 – Greensomes"
+            "R3":"Round 3 – Shamble (Match Play)"
         }
         current_round = None
         for key in sorted(st.session_state.matches.keys(), key=MSORT):
@@ -582,6 +582,16 @@ with tab_scores:
 
         render_live(saved_w, saved_k)
 
+        # ── TOP SAVE BUTTON ──
+        if st.button("💾 Save Scores/Update Leaderboard", use_container_width=True,
+                     key=f"save_top_{selected_key}"):
+            # collect current widget values from session state
+            top_w = [int(st.session_state.get(f"sw_{selected_key}_{h}", saved_w[h])) for h in range(18)]
+            top_k = [int(st.session_state.get(f"sk_{selected_key}_{h}", saved_k[h])) for h in range(18)]
+            pts_w, pts_k, status = do_save(selected_key, top_w, top_k, fmt)
+            st.success(f"✅ {status} · {team_w} {pts_w:.1f}pt – {team_k} {pts_k:.1f}pt")
+            st.rerun()
+
         # ── SCORE GRID HEADER with live tally ──
         tally_w = score_tally(saved_w)
         tally_k = score_tally(saved_k)
@@ -657,10 +667,13 @@ with tab_scores:
         # Update live bar
         render_live(new_scores_w, new_scores_k)
 
-        # ── AUTO-SAVE: write to Firebase whenever scores change ──
-        if new_scores_w != saved_w or new_scores_k != saved_k:
+        st.divider()
+        # ── BOTTOM SAVE BUTTON ──
+        if st.button("💾 Save Scores/Update Leaderboard", use_container_width=True,
+                     key=f"save_bot_{selected_key}"):
             pts_w, pts_k, status = do_save(selected_key, new_scores_w, new_scores_k, fmt)
-            st.caption(f"✅ Auto-saved · {status}")
+            st.success(f"✅ {status} · {team_w} {pts_w:.1f}pt – {team_k} {pts_k:.1f}pt")
+            st.rerun()
 
 # ══════════════════════════════════════════════
 # TAB 4 – POINTS
@@ -702,7 +715,7 @@ with tab_pp:
     round_labels = {
         "R1":"Round 1 – Fourball",
         "R2":"Round 2 – Singles",
-        "R3":"Round 3 – Greensomes"
+        "R3":"Round 3 – Shamble (Match Play)"
     }
     current_round = None
     for key in sorted(st.session_state.matches.keys(), key=MSORT):
@@ -722,13 +735,9 @@ with tab_pp:
         if not isinstance(sk_saved, list): sk_saved = [0]*18
         tally_w = score_tally(sw_saved)
         tally_k = score_tally(sk_saved)
-        rk = key.split("-")[0]
-        par_w_res = to_par_str(sw_saved, rk)
-        par_k_res = to_par_str(sk_saved, rk)
         _, _, _, status = calculate_match_play(sw_saved, sk_saved, m.get("format",""))
-        w_score_str = f"**{tally_w}** ({par_w_res})" if tally_w else "–"
-        k_score_str = f"**{tally_k}** ({par_k_res})" if tally_k else "–"
-        tally_str = f" · {pw_str} {w_score_str} – {pk_str} {k_score_str}" if (tally_w or tally_k) else ""
+        # Show score tallies alongside result
+        tally_str = f" · Scores: {pw_str} **{tally_w}** – {pk_str} **{tally_k}**" if (tally_w or tally_k) else ""
         st.markdown(f"{icon} **{key}**: {pw_str} vs {pk_str} · *{status}* · **{pts_w:.1f}–{pts_k:.1f}**{tally_str}")
 
 st.divider()
