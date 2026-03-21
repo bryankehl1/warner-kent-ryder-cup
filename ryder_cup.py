@@ -181,15 +181,6 @@ for _k in list(st.session_state.players.keys()):
     elif "kent" in _k.lower():
         st.session_state.kent_name = _k
 
-# ── One-time migration: rename Greensomes → Shamble in Firebase & session ──
-for _mk, _mv in list(st.session_state.matches.items()):
-    if _mv.get("format") == "Greensomes":
-        st.session_state.matches[_mk]["format"] = "Shamble"
-        try:
-            db.child("matches").child(_mk).update({"format": "Shamble"})
-        except:
-            pass
-
 # ── HELPERS ──
 MSORT = lambda k: (int(k.split('-')[0][1:]) if k.split('-')[0][1:].isdigit() else 99,
                    int(k.split('-M')[1])     if '-M' in k and k.split('-M')[1].isdigit() else 99)
@@ -274,9 +265,9 @@ def match_status_label(scores_w, scores_k):
 
 # ── COURSE PAR DATA ──
 COURSE_PARS = {
-    "R1": [5,3,4,5,4,4,3,4,4,4,4,4,3,4,4,5,3,5],  # Bloomington
+    "R1": [4,4,4,3,4,4,5,3,5,5,3,4,5,4,4,3,4,4],  # Bloomington (starting hole 10)
     "R2": [4,4,3,4,4,4,5,3,5,4,4,4,5,4,3,4,3,5],  # Black Desert
-    "R3": [5,3,4,5,4,4,3,4,4,4,4,4,3,4,4,5,3,5],  # Bloomington
+    "R3": [4,4,4,3,4,4,5,3,5,5,3,4,5,4,4,3,4,4],  # Bloomington (starting hole 10)
 }
 
 def to_par_str(scores, round_key):
